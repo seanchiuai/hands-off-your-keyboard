@@ -8,8 +8,4 @@ argument-hint: []
 
 Stage, commit, and push all changes completed during this session to the remote repository.
 
-Important Notes:
-- Review diffs carefully before committing
-- Ensure all changes are intentional and complete
-- Follow conventional commit format: `type: descriptive message`
-- Warn if there are unstaged changes, TODO comments, or uncommitted work to ensure no unfinished tasks are accidentally pushed
+**Important Note:** Only perform this push on the main branch. If any merge conflicts or errors occur during the push, resolve them automatically in the most reliable way possible to ensure a clean commit.
