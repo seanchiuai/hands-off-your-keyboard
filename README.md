@@ -1,231 +1,435 @@
-# Next.js + Convex + Clerk Starter Template
+# AI Voice Shopping Assistant 🛍️🎤
 
-A modern full-stack TypeScript starter template with authentication, real-time database, and beautiful UI components.
+A sophisticated AI-powered shopping assistant that uses voice conversations to help users find products, learn their preferences, and provide personalized recommendations.
 
-## 🚀 Tech Stack
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
+![Python](https://img.shields.io/badge/Python-3.8+-green)
 
-- **Frontend**: Next.js 15 with App Router, Tailwind CSS 4
-- **Backend**: Convex (real-time database and serverless functions)
-- **Authentication**: Clerk
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS with shadcn/ui components
+## 🌟 Overview
 
-## 📋 Prerequisites
+This project combines cutting-edge voice AI technology with intelligent product search and preference learning to create a natural, conversational shopping experience. Users can speak naturally about what they're looking for, and the AI assistant understands context, asks clarifying questions, and learns their preferences over time.
 
-Before you begin, make sure you have:
+### Key Features
 
-- Node.js 18+ installed
-- npm or yarn package manager
-- A Clerk account (free)
-- A Convex account (free)
+- 🎙️ **Real-time Voice Conversations**: Natural language shopping through voice using Pipecat and Gemini
+- 🔍 **Background Research Agent**: Autonomous product search across multiple retailers
+- 🧠 **Intelligent Preference Learning**: AI-powered system that learns user preferences from interactions
+- 💾 **Personal Shopping Lists**: Save items across sessions with full history
+- 🎨 **Modern Interactive UI**: Beautiful, responsive interface with product carousels and detailed cards
+- 🔐 **Secure Authentication**: Clerk-based user authentication and session management
 
-## 🛠️ Setup Instructions
+## 🏗️ Architecture
 
-### 1. Clone and Install
+### Technology Stack
 
-```bash
-git clone <your-repo-url>
-cd template-nextjs-clerk
-npm install
+**Frontend:**
+- Next.js 15 (App Router)
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- shadcn/ui components
+
+**Backend:**
+- Convex (real-time database & serverless functions)
+- Clerk (authentication)
+- Gemini 2.0 Flash (preference learning & analysis)
+
+**Voice Agent:**
+- Pipecat AI (voice pipeline framework)
+- Gemini 1.5 Flash (conversational AI)
+- Google TTS (text-to-speech)
+- Silero VAD (voice activity detection)
+- WebSocket (real-time communication)
+
+### System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Next.js Frontend                      │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────┐  │
+│  │ Voice UI    │  │ Research Page │  │ Product Display  │  │
+│  │ (WebSocket) │  │              │  │ (Carousels)      │  │
+│  └──────┬──────┘  └──────┬───────┘  └────────┬─────────┘  │
+└─────────┼────────────────┼───────────────────┼─────────────┘
+          │                │                   │
+          │ WebSocket      │ Convex Hooks      │
+          │                │                   │
+┌─────────▼────────────────▼───────────────────▼─────────────┐
+│                      Convex Backend                         │
+│  ┌────────────┐  ┌──────────────┐  ┌───────────────────┐  │
+│  │ Voice      │  │ Research     │  │ Preference        │  │
+│  │ Sessions   │  │ Actions      │  │ Learning (Gemini) │  │
+│  │ (HTTP API) │  │              │  │                   │  │
+│  └─────┬──────┘  └──────────────┘  └───────────────────┘  │
+└────────┼───────────────────────────────────────────────────┘
+         │ HTTP Callbacks
+         │
+┌────────▼─────────────────────────────────────────────────┐
+│              Pipecat Voice Agent (Python)                 │
+│  ┌──────┐  ┌──────┐  ┌─────────┐  ┌─────┐  ┌─────────┐ │
+│  │ VAD  │→ │ STT  │→ │ Gemini  │→ │ TTS │→ │ WebRTC  │ │
+│  │      │  │      │  │ LLM     │  │     │  │ /WS     │ │
+│  └──────┘  └──────┘  └────┬────┘  └─────┘  └─────────┘ │
+│                           │                              │
+│                    ┌──────▼──────┐                       │
+│                    │ Custom      │                       │
+│                    │ Actions     │                       │
+│                    │ (Search,    │                       │
+│                    │  Save)      │                       │
+│                    └─────────────┘                       │
+└──────────────────────────────────────────────────────────┘
 ```
 
-### 2. Set Up Convex
+## 🚀 Quick Start
 
-1. **Create a Convex account**: Go to [convex.dev](https://convex.dev) and sign up
-2. **Install Convex CLI**:
-   ```bash
-   npm install -g convex
-   ```
-3. **Login to Convex**:
-   ```bash
-   npx convex login
-   ```
-4. **Initialize your project**:
+### Prerequisites
+
+- Node.js 18+ and npm
+- Python 3.8+
+- Accounts for: [Convex](https://convex.dev), [Clerk](https://clerk.com), [Google AI](https://ai.google.dev/)
+
+### Installation
+
+1. **Clone the repository**
+```bash
+git clone https://github.com/yourusername/hands-off-your-keyboard.git
+cd hands-off-your-keyboard
+```
+
+2. **Install dependencies**
+```bash
+# Frontend & Backend
+npm install
+
+# Voice Agent
+cd pipecat
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cd ..
+```
+
+3. **Set up Convex**
    ```bash
    npx convex dev
-   ```
-   - This will create a new Convex project and give you a deployment URL
-   - Copy the deployment URL (it looks like `https://your-project.convex.cloud`)
+# This will create .env.local with your NEXT_PUBLIC_CONVEX_URL
+```
 
-### 3. Set Up Clerk
-
-1. **Create a Clerk account**: Go to [clerk.com](https://clerk.com) and sign up
-2. **Create a new application** in your Clerk dashboard
-3. **Get your keys** from the Clerk dashboard:
-   - Go to "API Keys" in your Clerk dashboard
-   - Copy the "Publishable key" and "Secret key"
-
-### 4. Configure JWT Template in Clerk
-
-This is **critical** for Clerk to work with Convex:
-
-1. In your Clerk dashboard, go to **"JWT Templates"**
-2. Click **"New template"**
-3. Select **"Convex"** from the list
-4. Name it `convex` (lowercase)
-5. Set the **Issuer** to your Clerk domain (e.g., `https://your-app.clerk.accounts.dev`)
-6. Save the template
-
-### 5. Environment Variables
-
-Create a `.env.local` file in your project root:
-
+4. **Configure Clerk**
+- Create an application at [clerk.com](https://clerk.com)
+- Create a JWT template named "convex" (select Convex preset)
+- Add to `.env.local`:
 ```env
-# Convex
-NEXT_PUBLIC_CONVEX_URL=https://your-project.convex.cloud
-
-# Clerk
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
 ```
 
-**Where to find these:**
-- `NEXT_PUBLIC_CONVEX_URL`: From step 2 when you ran `npx convex dev`
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Clerk dashboard → API Keys → Publishable key
-- `CLERK_SECRET_KEY`: Clerk dashboard → API Keys → Secret key
+5. **Configure Gemini API**
+- Get API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+- Add to Convex Dashboard → Settings → Environment Variables:
+```
+GOOGLE_GENERATIVE_AI_API_KEY=your_key_here
+PIPECAT_SERVER_SECRET=your_secret_here
+```
+- Add to `pipecat/.env`:
+```env
+GOOGLE_API_KEY=your_key_here
+CONVEX_HTTP_URL=your_convex_url
+PIPECAT_SERVER_SECRET=same_secret_as_above
+```
 
-### 6. Configure Convex Environment Variables
-
-1. Go to your [Convex dashboard](https://dashboard.convex.dev)
-2. Select your project
-3. Go to **"Settings"** → **"Environment Variables"**
-4. Add this variable:
-   ```
-   CLERK_JWT_ISSUER_DOMAIN=https://your-app.clerk.accounts.dev
-   ```
-   (Replace with your actual Clerk issuer domain from step 4)
-
-### 7. Update Convex Auth Config
-
-Update `convex/auth.config.ts` with your Clerk domain:
-
+6. **Update Convex Auth Config**
+Edit `convex/auth.config.ts`:
 ```typescript
 export default {
   providers: [
     {
-      domain: "https://your-app.clerk.accounts.dev", // Replace with your domain
+      domain: "https://your-app.clerk.accounts.dev",
       applicationID: "convex",
     },
   ]
 };
 ```
 
-## 🏃‍♂️ Running the Application
+See [SETUP.md](./SETUP.md) for detailed setup instructions.
 
-### Development Mode
+## 🎯 Usage
 
+### Running the Application
+
+**Terminal 1 - Backend & Frontend:**
 ```bash
-# Run both frontend and backend
 npm run dev
 ```
 
-This starts:
-- Next.js frontend at `http://localhost:3000`
-- Convex backend (dashboard opens automatically)
-
-### Individual Services
-
+**Terminal 2 - Voice Agent:**
 ```bash
-# Frontend only
-npm run dev:frontend
-
-# Backend only
-npm run dev:backend
+cd pipecat
+source venv/bin/activate
+python agent.py
 ```
 
-### Production
+The application will be available at:
+- Frontend: http://localhost:3000
+- Voice Agent: ws://localhost:8000
+- Convex Dashboard: Opens automatically
 
-```bash
-# Build for production
-npm run build
+### Using the Voice Shopping Assistant
 
-# Start production server
-npm start
-```
+1. **Navigate to Voice Shopper** at http://localhost:3000/voice-shopper
+2. **Click the microphone button** to start a voice session
+3. **Speak naturally** about what you're looking for:
+   - "I need a laptop for programming under $1500"
+   - "Show me ergonomic office chairs"
+   - "Find me affordable wireless headphones"
+4. **The AI will ask clarifying questions** if needed
+5. **View products** in the results panel
+6. **Save items** to your personal list
 
-## 🔧 Available Scripts
+### Using Background Research
 
-- `npm run dev` - Start development servers (frontend + backend)
-- `npm run dev:frontend` - Start only Next.js frontend
-- `npm run dev:backend` - Start only Convex backend
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
+1. **Navigate to Research** at http://localhost:3000/research
+2. **Enter a search query** with optional filters
+3. **The system searches in the background** and continuously updates results
+4. **View and filter products** by price, rating, retailer
+
+## 🧠 How It Works
+
+### Voice Conversation Flow
+
+1. **User speaks** → Audio captured via browser
+2. **Pipecat VAD** detects voice activity
+3. **Speech-to-Text** converts audio to text
+4. **Gemini LLM** processes the query and generates response
+5. **Custom Actions** trigger (search products, save items)
+6. **Text-to-Speech** converts response to audio
+7. **User hears response** via browser audio output
+
+### Preference Learning System
+
+The system learns user preferences through two mechanisms:
+
+**1. Explicit Interactions:**
+- Tracking saves, views, clicks, purchases
+- Recording voice queries and search terms
+- Monitoring product categories and price ranges
+
+**2. AI-Powered Analysis:**
+- Gemini analyzes interaction patterns
+- Extracts structured preferences (style, budget, brands, colors)
+- Updates user profile automatically
+- Personalizes future recommendations
+
+Example: If you consistently view modern, minimalist furniture under $500, the system learns your style and budget preferences automatically.
+
+### Background Research Agent
+
+When you search for products:
+
+1. **Query Analysis**: System parses your search and preferences
+2. **Multi-Source Search**: Searches across configured retailers (extensible to real APIs)
+3. **Result Storage**: Products stored in database with rankings
+4. **Continuous Updates**: Results can be updated asynchronously
+5. **Personalized Ranking**: Results ranked based on your learned preferences
 
 ## 📁 Project Structure
 
 ```
-├── app/                 # Next.js pages (App Router)
-├── components/          # React components
-├── convex/             # Backend functions and schema
-│   ├── auth.config.ts  # Clerk authentication config
-│   ├── schema.ts       # Database schema
-│   └── myFunctions.ts  # Server functions
-├── public/             # Static assets
-├── middleware.ts       # Route protection
-└── ...
+hands-off-your-keyboard/
+├── app/                          # Next.js app router pages
+│   ├── voice-shopper/           # Voice shopping interface
+│   ├── research/                # Background research page
+│   └── tasks/                   # Task management demo
+├── components/                   # React components
+│   ├── ui/                      # shadcn/ui components
+│   ├── ProductCard.tsx          # Product display card
+│   ├── ProductCarousel.tsx      # Product grid/carousel
+│   ├── VoiceInputButton.tsx     # Voice control button
+│   └── VoiceAgentDisplay.tsx    # Conversation display
+├── convex/                       # Backend functions
+│   ├── schema.ts                # Database schema
+│   ├── voiceShopper.ts          # Voice session management
+│   ├── research.ts              # Background research logic
+│   ├── preferenceLearning.ts    # AI preference extraction
+│   ├── userPreferences.ts       # Preference CRUD
+│   ├── http.ts                  # HTTP endpoints for Pipecat
+│   └── auth.config.ts           # Clerk configuration
+├── pipecat/                      # Python voice agent
+│   ├── agent.py                 # Main Pipecat agent
+│   ├── actions.py               # Custom LLM actions
+│   ├── prompts.py               # System prompts
+│   └── requirements.txt         # Python dependencies
+├── SETUP.md                      # Detailed setup guide
+├── DEPLOYMENT.md                 # Deployment instructions
+└── TOOL_FEEDBACK.md              # Feedback on Pipecat & Gemini
 ```
 
-## 🔐 Authentication Flow
+## 🎨 Features in Detail
 
-This template includes:
-- Sign up/Sign in pages via Clerk
-- Protected routes using middleware
-- User session management
-- Integration between Clerk and Convex for authenticated API calls
+### Voice Shopping Interface
+- Real-time voice conversation with visual feedback
+- Agent status indicators (listening, thinking, speaking)
+- Conversation history with timestamps
+- Product results displayed as you speak
+- Save items directly from voice commands
 
-## 🗄️ Database
+### Product Display
+- Rich product cards with images, prices, ratings
+- Interactive elements (wishlist, cart, external links)
+- Responsive grid layout
+- Real-time availability status
+- Source attribution for multi-retailer support
 
-Convex provides:
-- Real-time database with TypeScript schema
-- Serverless functions
-- Real-time subscriptions
-- Automatic scaling
+### Preference Management
+- Automatic preference learning from behavior
+- Manual preference editing
+- Style, budget, size, brand, color tracking
+- Confidence scoring for learned preferences
+- Privacy-focused (user data isolated)
 
-Define your schema in `convex/schema.ts` and create functions in `convex/myFunctions.ts`.
+### Session Management
+- Secure authentication via Clerk
+- Per-user session history
+- Saved items persist across sessions
+- Conversation logs for continuity
 
-## 🆘 Troubleshooting
+## 🔧 Configuration
 
-### Common Issues
+### Environment Variables
 
-1. **"Convex client not configured"**
-   - Check your `NEXT_PUBLIC_CONVEX_URL` in `.env.local`
-   - Make sure Convex dev server is running
+**`.env.local` (Frontend & Convex):**
+```env
+NEXT_PUBLIC_CONVEX_URL=https://your-project.convex.cloud
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+```
 
-2. **Authentication not working**
-   - Verify JWT template is created in Clerk with issuer domain
-   - Check `CLERK_JWT_ISSUER_DOMAIN` in Convex dashboard
-   - Ensure `convex/auth.config.ts` has correct domain
+**Convex Dashboard Environment Variables:**
+```env
+GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_key
+PIPECAT_SERVER_SECRET=your_shared_secret
+CLERK_JWT_ISSUER_DOMAIN=https://your-app.clerk.accounts.dev
+```
 
-3. **Build errors**
-   - Run `npm run lint` to check for linting issues
-   - Ensure all environment variables are set
+**`pipecat/.env` (Voice Agent):**
+```env
+GOOGLE_API_KEY=your_gemini_key
+CONVEX_HTTP_URL=https://your-project.convex.cloud
+PIPECAT_SERVER_SECRET=same_as_convex_secret
+SERVER_HOST=0.0.0.0
+SERVER_PORT=8000
+```
 
-### Getting Help
-
-- [Convex Documentation](https://docs.convex.dev)
-- [Clerk Documentation](https://clerk.com/docs)
-- [Next.js Documentation](https://nextjs.org/docs)
+See [SETUP.md](./SETUP.md) for complete configuration details.
 
 ## 🚀 Deployment
 
-### Deploy to Vercel
+### Frontend (Vercel)
+```bash
+# Connect GitHub repo to Vercel
+# Add environment variables in Vercel dashboard
+# Deploy automatically on push
+```
 
-1. Push your code to GitHub
-2. Connect your repo to [Vercel](https://vercel.com)
-3. Add your environment variables in Vercel dashboard
-4. Deploy!
+### Backend (Convex)
+```bash
+# Convex auto-deploys on push to main
+# Or manually: npx convex deploy --prod
+```
 
-### Deploy Convex
+### Voice Agent (Your Server)
+```bash
+# Use systemd, PM2, or Docker
+# Ensure persistent connection to Convex
+# Configure SSL/TLS for production WebSocket
+```
 
-Convex automatically deploys when you push to your main branch. Configure this in your Convex dashboard under "Settings" → "Deploy Settings".
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
 
-## 📝 License
+## 🧪 Development
 
-This project is open source and available under the [MIT License](LICENSE).
+### Running Tests
+```bash
+npm run lint                    # Lint frontend code
+npm run build                   # Test production build
+```
+
+### Development Workflow
+1. Start Convex dev server: `npx convex dev`
+2. Start Next.js: `npm run dev:frontend`
+3. Start Pipecat agent: `cd pipecat && python agent.py`
+4. Make changes and see live updates
+
+### Adding Product Search APIs
+
+Currently uses mock data for demonstration. To integrate real product APIs:
+
+1. **Edit `convex/research.ts`:**
+   - Uncomment the example API integration code (lines 109-136)
+   - Add your API keys to Convex environment variables
+   - Implement rate limiting and error handling
+
+2. **Supported APIs:**
+   - Google Shopping API
+   - Amazon Product Advertising API
+   - Bright Data (web scraping)
+   - Custom retailer APIs
+
+## 📚 Documentation
+
+- [Setup Guide](./SETUP.md) - Detailed setup instructions
+- [Deployment Guide](./DEPLOYMENT.md) - Production deployment
+- [Tool Feedback](./TOOL_FEEDBACK.md) - Experiences with Pipecat & Gemini
+- [Convex Guidelines](./convexGuidelines.md) - Backend development patterns
+- [Pipecat README](./pipecat/README.md) - Voice agent details
+
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **Pipecat AI** for the excellent voice pipeline framework
+- **Google Gemini** for powerful LLM capabilities
+- **Convex** for the real-time backend infrastructure
+- **Clerk** for seamless authentication
+- **Vercel** for Next.js and deployment platform
+
+## 🐛 Known Limitations
+
+- Product search uses mock data (integrate real APIs for production)
+- WebSocket reconnection needs enhancement for production reliability
+- Voice agent supports single concurrent session (scale with multiple instances)
+- Limited to English language (multilingual support possible)
+
+## 🗺️ Roadmap
+
+- [ ] Integrate real product search APIs
+- [ ] Add voice transcription display
+- [ ] Implement multi-retailer price comparison
+- [ ] Add product availability notifications
+- [ ] Support multiple concurrent voice sessions
+- [ ] Mobile app with React Native
+- [ ] Multi-language support
+- [ ] Advanced preference analytics dashboard
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/yourusername/hands-off-your-keyboard/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/hands-off-your-keyboard/discussions)
+- **Documentation**: See docs in the repository
 
 ---
 
-**Happy coding! 🎉**
-
-For questions or issues, please open a GitHub issue or check the documentation links above.
+**Built with ❤️ for the future of conversational commerce**

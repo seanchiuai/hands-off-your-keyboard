@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
@@ -9,6 +9,8 @@ import { ProductCard } from "@/components/ProductCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { useAudioStream } from "@/hooks/use-audio-stream";
+import { useWebSocketConnection } from "@/hooks/use-websocket-connection";
 
 interface ConversationMessage {
   speaker: "user" | "agent" | "system";
@@ -36,6 +38,7 @@ export default function VoiceShopperPage() {
   const [currentProducts, setCurrentProducts] = useState<Product[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [savedProductIds, setSavedProductIds] = useState<Set<string>>(new Set());
+  const stopCaptureRef = useRef<(() => void) | null>(null);
 
   // Convex mutations and queries
   const initiateSession = useAction(api.voiceShopper.initiateSession);
@@ -50,18 +53,82 @@ export default function VoiceShopperPage() {
     sessionId ? { sessionId } : "skip"
   );
 
+  // Audio streaming hooks
+  const { startCapture, stopCapture, playAudio, stopAudio, initAudioContext } = useAudioStream();
+
+  // WebSocket connection configuration
+  const VOICE_AGENT_URL = process.env.NEXT_PUBLIC_VOICE_AGENT_URL || "ws://localhost:8000";
+
+  // WebSocket connection
+  const { connect, disconnect, sendAudio, isConnected } = useWebSocketConnection({
+    url: sessionId ? `${VOICE_AGENT_URL}?sessionId=${sessionId}` : VOICE_AGENT_URL,
+    onOpen: () => {
+      console.log("Connected to voice agent");
+      toast.success("Voice agent connected!");
+      setAgentStatus("listening");
+    },
+    onClose: () => {
+      console.log("Disconnected from voice agent");
+      setAgentStatus("idle");
+    },
+    onError: (error) => {
+      console.error("Voice agent error:", error);
+      toast.error("Voice agent connection error");
+      setAgentStatus("idle");
+    },
+    onMessage: (message) => {
+      // Handle JSON messages from voice agent
+      if (message.type === "text") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            speaker: "agent",
+            text: message.data.text,
+            timestamp: Date.now(),
+          },
+        ]);
+      } else if (message.type === "status") {
+        // Update agent status
+        if (message.data.status === "thinking") {
+          setAgentStatus("thinking");
+        } else if (message.data.status === "speaking") {
+          setAgentStatus("speaking");
+        } else if (message.data.status === "listening") {
+          setAgentStatus("listening");
+        } else if (message.data.status === "searching") {
+          setAgentStatus("searching");
+        }
+      } else if (message.type === "function_call") {
+        // Handle function call results
+        if (message.data.function === "search_products") {
+          toast.info("Searching for products...");
+        }
+      }
+    },
+    onAudioData: async (audioData) => {
+      // Play received audio from agent
+      try {
+        await playAudio(audioData);
+      } catch (error) {
+        console.error("Error playing audio:", error);
+      }
+    },
+  });
+
   // Handle session start
   const handleSessionStart = async () => {
     try {
       setIsConnecting(true);
       setAgentStatus("thinking");
 
+      // Initialize audio context (requires user interaction)
+      initAudioContext();
+
       // Initiate session via Convex
       const result = await initiateSession({});
 
       setSessionId(result.sessionId);
       setIsActive(true);
-      setAgentStatus("listening");
 
       // Add welcome message
       setMessages([
@@ -74,10 +141,18 @@ export default function VoiceShopperPage() {
 
       toast.success("Voice session started!");
 
-      // TODO: In production, establish WebSocket connection to Pipecat server
-      // const ws = new WebSocket(`ws://localhost:8000?sessionId=${result.sessionId}`);
-      // ws.onmessage = (event) => handleWebSocketMessage(event);
+      // Connect to WebSocket server
+      connect();
 
+      // Start capturing audio from microphone
+      const cleanup = await startCapture((audioData) => {
+        // Send audio data to voice agent via WebSocket
+        if (isConnected) {
+          sendAudio(audioData);
+        }
+      });
+
+      stopCaptureRef.current = cleanup;
     } catch (error) {
       console.error("Failed to start session:", error);
       toast.error("Failed to start voice session");
@@ -94,6 +169,19 @@ export default function VoiceShopperPage() {
 
     try {
       setAgentStatus("idle");
+
+      // Stop audio capture
+      if (stopCaptureRef.current) {
+        stopCaptureRef.current();
+        stopCaptureRef.current = null;
+      }
+      stopCapture();
+      stopAudio();
+
+      // Disconnect WebSocket
+      disconnect();
+
+      // End session in backend
       await endSession({ sessionId });
       setIsActive(false);
       setSessionId(null);
@@ -108,10 +196,6 @@ export default function VoiceShopperPage() {
       ]);
 
       toast.success("Voice session ended");
-
-      // TODO: Close WebSocket connection
-      // ws.close();
-
     } catch (error) {
       console.error("Failed to end session:", error);
       toast.error("Failed to end session");
