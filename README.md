@@ -371,9 +371,9 @@ Currently uses mock data for demonstration. To integrate real product APIs:
    - Implement rate limiting and error handling
 
 2. **Supported APIs:**
+   - Google Gemini API with Search grounding (currently implemented)
    - Google Shopping API
    - Amazon Product Advertising API
-   - Bright Data (web scraping)
    - Custom retailer APIs
 
 ## 📚 Documentation

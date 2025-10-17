@@ -601,10 +601,10 @@ async def handle_session(self, websocket, path):
 - Handle reconnection logic
 
 **2. Integrate Real Product APIs:**
-- Replace mock products in `convex/research.ts`
-- Implement Google Shopping API
-- Add Amazon Product Advertising API
-- Configure web scraping service (Bright Data, ScrapingBee)
+- ✅ Gemini API with Google Search grounding (implemented in `convex/actions/brightdata.ts`)
+- Replace mock products in `convex/research.ts` (voice agent specific)
+- Optional: Implement direct Google Shopping API
+- Optional: Add Amazon Product Advertising API
 
 **3. Add Voice Processing:**
 - Configure STT (Speech-to-Text) provider

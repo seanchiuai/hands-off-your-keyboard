@@ -393,9 +393,9 @@ Your expertise:
 The current implementation uses mock data in `convex/research.ts`. To integrate real APIs:
 
 1. **Choose API provider:**
+   - ✅ Google Gemini API with Search grounding (implemented in background research)
    - Google Shopping API
-   - Amazon Product Advertising API  
-   - Bright Data (web scraping)
+   - Amazon Product Advertising API
    - RapidAPI (multiple sources)
 
 2. **Update research action:**
