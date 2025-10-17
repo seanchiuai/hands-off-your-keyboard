@@ -159,13 +159,34 @@ class VoiceShopperAgent:
             websocket: WebSocket connection
             path: WebSocket path (can include session info)
         """
-        # Extract session_id and user_id from path or query params
-        # In production, you'd parse these from the WebSocket connection
-        # For now, we'll use placeholder values
-        session_id = f"session_{asyncio.get_event_loop().time()}"
-        user_id = "user_placeholder"  # In production, get from authentication
-
-        logger.info(f"New session started: {session_id} for user {user_id}")
+        # Parse session_id and user_id from WebSocket URL query parameters
+        from urllib.parse import urlparse, parse_qs
+        
+        try:
+            # Parse query parameters from WebSocket path
+            parsed = urlparse(path)
+            query_params = parse_qs(parsed.query)
+            
+            # Extract session ID (required)
+            session_id = query_params.get('sessionId', [None])[0]
+            if not session_id:
+                logger.warning(f"No sessionId in WebSocket connection: {path}")
+                session_id = f"session_{int(asyncio.get_event_loop().time() * 1000)}"
+            
+            # Extract user ID (optional, may come from authentication)
+            user_id = query_params.get('userId', [None])[0]
+            if not user_id:
+                # Try to get from authentication headers or use generated ID
+                user_id = f"user_{int(asyncio.get_event_loop().time() * 1000)}"
+                logger.info(f"No userId provided, using generated: {user_id}")
+            
+            logger.info(f"New session started: {session_id} for user {user_id}")
+            
+        except Exception as e:
+            logger.error(f"Error parsing WebSocket parameters: {e}")
+            session_id = f"session_{int(asyncio.get_event_loop().time() * 1000)}"
+            user_id = f"user_{int(asyncio.get_event_loop().time() * 1000)}"
+            logger.warning(f"Using generated IDs: session={session_id}, user={user_id}")
 
         try:
             # Create the pipeline for this session

@@ -83,7 +83,7 @@ export const storeResearchResults = internalMutation({
 
 /**
  * Helper function to perform product search
- * In production, this would call external APIs
+ * Supports both real API (SerpAPI) and mock data
  */
 async function performProductSearch(
   query: string,
@@ -102,46 +102,89 @@ async function performProductSearch(
     price: number;
   }>
 > {
-  // Mock implementation - Replace with real API calls in production
-  // Example: Google Shopping API, Amazon Product Advertising API, etc.
-
-  // For demonstration purposes, here's how you would structure a real API call:
-  /*
-  const apiKey = process.env.SHOPPING_API_KEY;
-  const response = await fetch(
-    `https://shopping-api.example.com/search?q=${encodeURIComponent(query)}` +
-    `${preferences?.minPrice ? `&minPrice=${preferences.minPrice}` : ""}` +
-    `${preferences?.maxPrice ? `&maxPrice=${preferences.maxPrice}` : ""}`,
-    {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
+  // Check if real API key is available
+  const serpApiKey = process.env.SERPAPI_KEY;
+  
+  if (serpApiKey) {
+    try {
+      console.log(`[Research] Using SerpAPI for query: "${query}"`);
+      return await searchWithSerpAPI(query, preferences, serpApiKey);
+    } catch (error) {
+      console.error("[Research] SerpAPI failed, falling back to mock data:", error);
+      // Fall through to mock data
     }
-  );
+  } else {
+    console.log(`[Research] No SERPAPI_KEY found, using mock data for: "${query}"`);
+  }
+
+  // Fallback to mock data
+  const mockProducts = generateMockProducts(query, preferences);
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  return mockProducts;
+}
+
+/**
+ * Search products using SerpAPI (Google Shopping)
+ * Get free API key at: https://serpapi.com/
+ */
+async function searchWithSerpAPI(
+  query: string,
+  preferences?: {
+    minPrice?: number;
+    maxPrice?: number;
+    brands?: string[];
+    categories?: string[];
+  },
+  apiKey?: string
+): Promise<Array<{
+  title: string;
+  description: string;
+  imageUrl?: string;
+  productUrl: string;
+  price: number;
+}>> {
+  // Build SerpAPI URL
+  const params = new URLSearchParams({
+    engine: "google_shopping",
+    q: query,
+    api_key: apiKey || "",
+    num: "10", // Number of results
+  });
+
+  // Add price filters if provided
+  if (preferences?.minPrice || preferences?.maxPrice) {
+    const minPrice = preferences.minPrice || 0;
+    const maxPrice = preferences.maxPrice || 999999;
+    params.append("tbs", `mr:1,price:1,ppr_min:${minPrice},ppr_max:${maxPrice}`);
+  }
+
+  const response = await fetch(`https://serpapi.com/search?${params.toString()}`);
 
   if (!response.ok) {
-    throw new Error(`Search API error: ${response.statusText}`);
+    throw new Error(`SerpAPI error: ${response.statusText}`);
   }
 
   const data = await response.json();
 
-  return data.items.map((item: any) => ({
-    title: item.title,
-    description: item.description || item.snippet,
-    imageUrl: item.image,
-    productUrl: item.link,
-    price: parseFloat(item.price.value),
-  }));
-  */
+  if (!data.shopping_results || data.shopping_results.length === 0) {
+    console.log("[Research] No products found via SerpAPI");
+    return [];
+  }
 
-  // Mock data for demo purposes
-  const mockProducts = generateMockProducts(query, preferences);
+  // Parse and normalize results
+  const products = data.shopping_results
+    .filter((item: any) => item.price && item.title)
+    .map((item: any) => ({
+      title: item.title || "Unknown Product",
+      description: item.snippet || item.title || "",
+      imageUrl: item.thumbnail || undefined,
+      productUrl: item.link || item.product_link || "https://example.com",
+      price: parseFloat(item.price.replace(/[^0-9.]/g, "")) || 0,
+    }))
+    .filter((p: any) => p.price > 0); // Filter out items without valid prices
 
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
-  return mockProducts;
+  console.log(`[Research] Found ${products.length} products via SerpAPI`);
+  return products;
 }
 
 /**

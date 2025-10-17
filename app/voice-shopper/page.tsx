@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { useUser } from "@clerk/nextjs";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
 import { VoiceAgentDisplay } from "@/components/VoiceAgentDisplay";
 import { ProductCard } from "@/components/ProductCard";
@@ -30,6 +31,7 @@ interface Product {
 type AgentStatus = "idle" | "listening" | "thinking" | "speaking" | "searching";
 
 export default function VoiceShopperPage() {
+  const { user } = useUser();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isActive, setIsActive] = useState(false);
@@ -58,10 +60,15 @@ export default function VoiceShopperPage() {
 
   // WebSocket connection configuration
   const VOICE_AGENT_URL = process.env.NEXT_PUBLIC_VOICE_AGENT_URL || "ws://localhost:8000";
+  
+  // Get user ID for WebSocket connection
+  const [userId, setUserId] = useState<string | null>(null);
 
   // WebSocket connection
   const { connect, disconnect, sendAudio, isConnected } = useWebSocketConnection({
-    url: sessionId ? `${VOICE_AGENT_URL}?sessionId=${sessionId}` : VOICE_AGENT_URL,
+    url: sessionId && userId 
+      ? `${VOICE_AGENT_URL}?sessionId=${sessionId}&userId=${userId}` 
+      : VOICE_AGENT_URL,
     onOpen: () => {
       console.log("Connected to voice agent");
       toast.success("Voice agent connected!");
@@ -128,6 +135,7 @@ export default function VoiceShopperPage() {
       const result = await initiateSession({});
 
       setSessionId(result.sessionId);
+      setUserId(result.userId || user?.id || "anonymous");
       setIsActive(true);
 
       // Add welcome message
