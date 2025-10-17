@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Claude Code Instructions
 
-### Custom Agents and Plans
+### Custom Agents, Plans, and Specification
 - **`/agents`** - Contains custom agent definitions for specialized tasks
   - Before implementing features, check if a relevant agent exists in this directory
   - Invoke custom agents using the Task tool when their expertise matches the request
@@ -14,10 +14,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Before implementing features, check if a relevant plan exists in this directory
   - Follow the step-by-step instructions in the plan when implementing the feature
   - Plans provide architecture decisions, file locations, and implementation details
-  - If a user requests a feature with a plan, always reference and follow that plan
-  - If no matching plan exists, proceed with the implementation normally
+  - If a user requests new features relevant to an existing plan, modify that plan based on the user's request
+  - If no matching plan exists, create a new implementation plan
+  - Always update and check `PLANS_DIRECTORY.md` before implementing a new feature
+  - Plans should be named `FEATURE_[FEATURE DESCRIPTION]_IMPLEMENTATION.md`
+- **`/spec`** - Contains the high-level spec sheet (`spec-sheet.md`) that describes the app's purpose, core features, UI design, and overall tech stack
+  - Review `/spec/spec-sheet.md` to understand the project's goals and requirements before starting or suggesting any major changes
+  - If a user asks for an app change that does not align with the current spec sheet, **pause and confirm with the user before proceeding**. Once confirmed, update the spec sheet accordingly to ensure project documentation stays accurate and in sync with development
+  - The spec sheet is the canonical source for the intended behavior and architecture of the app
 
-**IMPORTANT**: Always check these directories when starting a new feature or task. Custom agents and plans provide project-specific expertise and tested approaches when available.
+**IMPORTANT**: Always check these directories when starting a new feature or task. Always use the Context7 MCP to do more research for complicated features before creating and editing a plan. Custom agents, plans, and the spec sheet provide project-specific expertise and tested approaches when available.
 
 ## Commands
 
@@ -36,6 +42,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Convex
 - `npx convex dev` - Start Convex development server (auto-started with `npm run dev`)
 - `npx convex deploy` - Deploy Convex functions to production
+
+### Run/Execution Policy
+- Only run `npm run dev` for brief, self-contained testing.
+- Do not leave servers running after tests complete; stop them immediately.
+- If a server must be started to verify behavior, terminate it before ending the turn.
 
 ## Architecture
 
@@ -93,6 +104,11 @@ CLERK_SECRET_KEY=<clerk-secret-key>
 - JWT-based authentication with Clerk
 - Custom hooks for framework integration
 - ESLint configuration for code quality
+
+## Debugging
+- If the first attempt at fixing a bug does not work according to the user, call context7 mcp.
+- If the second attempt does not work after using context7, create a query for the research agent with sufficient project and error context to find information to fix it. The user will report back with the results, then continue to implement the fix.
+- This applies both to debugging errors and when the user says a feature does not work even though the code is implemented.
 
 ## Authentication & Security
 - Protected routes using Clerk's authentication in middleware.ts
