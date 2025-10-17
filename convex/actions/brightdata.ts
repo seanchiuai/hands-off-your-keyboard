@@ -5,7 +5,7 @@ import { internal } from "../_generated/api";
 import { v } from "convex/values";
 
 /**
- * Internal action to initiate product search using Bright Data
+ * Internal action to initiate product search using Gemini API with Google Search grounding
  * This action will be triggered when a new search query is created
  */
 export const initiateProductSearch = internalAction({
@@ -27,71 +27,83 @@ export const initiateProductSearch = internalAction({
         status: "searching",
       });
 
-      // Get Bright Data configuration from environment variables
-      const BRIGHT_DATA_API_KEY = process.env.BRIGHT_DATA_API_KEY;
-      const BRIGHT_DATA_ZONE = process.env.BRIGHT_DATA_ZONE || "serp_api1";
+      // Get Gemini API key from environment variables
+      const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
-      if (!BRIGHT_DATA_API_KEY) {
+      if (!GEMINI_API_KEY) {
         throw new Error(
-          "Bright Data API credentials not configured. Please set BRIGHT_DATA_API_KEY environment variable."
+          "Gemini API key not configured. Please set GOOGLE_GENERATIVE_AI_API_KEY environment variable."
         );
       }
 
-      // Build Google Shopping URL with query parameters
-      const searchParams = new URLSearchParams({
-        q: args.searchText,
-        tbm: "shop", // Google Shopping
-        hl: "en", // Language: English
-        gl: "us", // Country: United States
-        num: "20", // Number of results
+      console.log("Initiating Gemini API product search:", {
+        queryId: args.queryId,
+        searchText: args.searchText,
+        preferences: args.preferences,
       });
 
-      // Add price filter if specified
+      // Build search query with price constraints
+      let searchQuery = `Find products for: ${args.searchText}`;
       if (args.preferences.minPrice || args.preferences.maxPrice) {
         const minPrice = args.preferences.minPrice || 0;
         const maxPrice = args.preferences.maxPrice || 999999;
-        searchParams.append("tbs", `price:1,ppr_min:${minPrice},ppr_max:${maxPrice}`);
+        searchQuery += ` with price range $${minPrice} to $${maxPrice}`;
       }
 
-      const googleShoppingUrl = `https://www.google.com/search?${searchParams.toString()}&brd_json=1`;
+      // Make request to Gemini API with Google Search grounding
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: `${searchQuery}.
 
-      console.log("Initiating Bright Data SERP API search:", {
-        queryId: args.queryId,
-        searchText: args.searchText,
-        url: googleShoppingUrl,
-      });
+Please provide a list of at least 10 products with the following information for each:
+- Product title
+- Price (in USD)
+- Product URL (actual shopping link)
+- Brief description
+- Merchant/retailer name
+- Rating (if available)
+- Number of reviews (if available)
 
-      // Make request to Bright Data SERP API
-      const response = await fetch("https://api.brightdata.com/request", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${BRIGHT_DATA_API_KEY}`,
-        },
-        body: JSON.stringify({
-          zone: BRIGHT_DATA_ZONE,
-          url: googleShoppingUrl,
-          format: "json",
-        }),
-      });
+Format the response as a JSON array of objects with these fields: title, price, productUrl, description, source, rating, reviewCount, availability.`,
+                  },
+                ],
+              },
+            ],
+            tools: [
+              {
+                googleSearch: {},
+              },
+            ],
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorBody = await response.text();
-        console.error("Bright Data API Error:", {
+        console.error("Gemini API Error:", {
           status: response.status,
           body: errorBody,
         });
-        throw new Error(`Bright Data API failed: ${response.status} - ${errorBody}`);
+        throw new Error(`Gemini API failed: ${response.status} - ${errorBody}`);
       }
 
-      const brightDataResult = await response.json();
-      console.log("Bright Data response received:", {
+      const geminiResult = await response.json();
+      console.log("Gemini API response received:", {
         queryId: args.queryId,
-        resultCount: brightDataResult.data?.length || 0,
       });
 
-      // Process the raw data from Bright Data
-      const processedProducts = processResults(brightDataResult);
+      // Process the Gemini API response
+      const processedProducts = processGeminiResults(geminiResult);
 
       // Store the processed products using internal mutation
       const storeResult: any = await ctx.runMutation(
@@ -133,9 +145,9 @@ export const initiateProductSearch = internalAction({
 });
 
 /**
- * Process raw Bright Data SERP API results into structured product data
+ * Process Gemini API results into structured product data
  */
-function processResults(brightDataResult: any): Array<{
+function processGeminiResults(geminiResult: any): Array<{
   title: string;
   imageUrl?: string;
   productUrl: string;
@@ -149,68 +161,101 @@ function processResults(brightDataResult: any): Array<{
   searchRank: number;
 }> {
   try {
-    // SERP API returns shopping results in different possible formats
-    let shoppingResults: any[] = [];
-
-    // Check for standard SERP API response structure
-    if (brightDataResult.shopping_results && Array.isArray(brightDataResult.shopping_results)) {
-      shoppingResults = brightDataResult.shopping_results;
-    } else if (brightDataResult.inline_shopping && Array.isArray(brightDataResult.inline_shopping)) {
-      shoppingResults = brightDataResult.inline_shopping;
-    } else if (brightDataResult.results && Array.isArray(brightDataResult.results)) {
-      shoppingResults = brightDataResult.results.filter((r: any) => r.type === "shopping");
-    } else if (Array.isArray(brightDataResult)) {
-      // If the result is directly an array
-      shoppingResults = brightDataResult;
-    }
-
-    if (shoppingResults.length === 0) {
-      console.warn("No shopping results found in Bright Data SERP API response");
+    // Extract text from Gemini response
+    const candidates = geminiResult.candidates;
+    if (!candidates || !Array.isArray(candidates) || candidates.length === 0) {
+      console.warn("No candidates found in Gemini API response");
       return [];
     }
 
-    console.log(`Processing ${shoppingResults.length} shopping results from Bright Data`);
+    const firstCandidate = candidates[0];
+    const content = firstCandidate.content;
 
-    return shoppingResults
+    if (!content || !content.parts || !Array.isArray(content.parts)) {
+      console.warn("No content parts found in Gemini API response");
+      return [];
+    }
+
+    // Extract text from parts
+    let responseText = "";
+    for (const part of content.parts) {
+      if (part.text) {
+        responseText += part.text;
+      }
+    }
+
+    if (!responseText) {
+      console.warn("No text found in Gemini API response");
+      return [];
+    }
+
+    console.log("Gemini response text:", responseText.substring(0, 500) + "...");
+
+    // Try to extract JSON array from the response
+    let products: any[] = [];
+
+    // Try to find JSON in the response
+    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      try {
+        products = JSON.parse(jsonMatch[0]);
+      } catch (parseError) {
+        console.error("Failed to parse JSON from Gemini response:", parseError);
+      }
+    }
+
+    // If JSON parsing failed, try to extract product information from the text
+    if (!Array.isArray(products) || products.length === 0) {
+      console.log("Attempting to extract products from text format");
+      products = extractProductsFromText(responseText);
+    }
+
+    if (products.length === 0) {
+      console.warn("No products extracted from Gemini API response");
+      return [];
+    }
+
+    console.log(`Processing ${products.length} products from Gemini API`);
+
+    // Format products to match expected structure
+    return products
       .map((item: any, index: number) => {
         try {
-          // Extract price (handle different formats like "$123.45" or "123.45")
+          // Extract price (handle different formats)
           let price = 0;
-          if (item.price) {
+          if (item.price !== undefined) {
             if (typeof item.price === "number") {
               price = item.price;
             } else if (typeof item.price === "string") {
               price = parseFloat(item.price.replace(/[^0-9.]/g, "")) || 0;
-            } else if (item.price.value) {
-              price = parseFloat(item.price.value);
             }
           }
 
           // Extract rating
           let rating: number | undefined;
-          if (item.rating) {
+          if (item.rating !== undefined) {
             rating = typeof item.rating === "number" ? item.rating : parseFloat(item.rating);
+            if (isNaN(rating)) rating = undefined;
           }
 
           // Extract review count
           let reviewsCount: number | undefined;
-          if (item.reviews) {
-            reviewsCount = typeof item.reviews === "number" ? item.reviews : parseInt(item.reviews);
-          } else if (item.reviews_count) {
-            reviewsCount = typeof item.reviews_count === "number" ? item.reviews_count : parseInt(item.reviews_count);
+          if (item.reviewCount !== undefined) {
+            reviewsCount = typeof item.reviewCount === "number" ? item.reviewCount : parseInt(item.reviewCount);
+            if (isNaN(reviewsCount)) reviewsCount = undefined;
           }
 
           return {
-            title: item.title || item.name || "Untitled Product",
-            imageUrl: item.thumbnail || item.image || item.imageUrl,
-            productUrl: item.link || item.url || item.productUrl || "",
+            title: item.title || "Untitled Product",
+            imageUrl: item.imageUrl,
+            productUrl: item.productUrl || item.url || `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(item.title || "")}`,
             price,
-            currency: item.currency || "USD",
-            description: item.snippet || item.description || undefined,
+            currency: "USD",
+            description: item.description,
             reviewsCount,
             rating,
-            availability: item.availability !== "Out of stock" && item.in_stock !== false,
-            source: item.source || item.merchant || item.seller || "Google Shopping",
+            availability: item.availability !== false,
+            source: item.source || item.merchant || "Online Retailer",
             searchRank: index + 1,
           };
         } catch (itemError) {
@@ -220,9 +265,47 @@ function processResults(brightDataResult: any): Array<{
       })
       .filter((item): item is NonNullable<typeof item> => item !== null && item.price > 0);
   } catch (error) {
-    console.error("Error processing Bright Data results:", error);
+    console.error("Error processing Gemini results:", error);
     return [];
   }
+}
+
+/**
+ * Extract product information from text format when JSON parsing fails
+ */
+function extractProductsFromText(text: string): any[] {
+  const products: any[] = [];
+
+  // This is a fallback - try to parse structured text
+  // Split by numbered items (1., 2., etc.)
+  const items = text.split(/\n\d+\.\s+/);
+
+  for (const item of items.slice(1)) { // Skip first empty split
+    try {
+      const titleMatch = item.match(/(?:Title|Product):\s*(.+?)(?:\n|$)/i);
+      const priceMatch = item.match(/Price:\s*\$?(\d+(?:\.\d{2})?)/i);
+      const urlMatch = item.match(/(?:URL|Link):\s*(.+?)(?:\n|$)/i);
+      const descMatch = item.match(/Description:\s*(.+?)(?:\n|$)/i);
+      const sourceMatch = item.match(/(?:Source|Merchant|Retailer):\s*(.+?)(?:\n|$)/i);
+      const ratingMatch = item.match(/Rating:\s*(\d+(?:\.\d+)?)/i);
+
+      if (titleMatch && priceMatch) {
+        products.push({
+          title: titleMatch[1].trim(),
+          price: parseFloat(priceMatch[1]),
+          productUrl: urlMatch ? urlMatch[1].trim() : undefined,
+          description: descMatch ? descMatch[1].trim() : undefined,
+          source: sourceMatch ? sourceMatch[1].trim() : undefined,
+          rating: ratingMatch ? parseFloat(ratingMatch[1]) : undefined,
+          availability: true,
+        });
+      }
+    } catch (e) {
+      console.error("Error parsing text item:", e);
+    }
+  }
+
+  return products;
 }
 
 /**

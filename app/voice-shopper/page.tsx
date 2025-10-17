@@ -78,12 +78,15 @@ export default function VoiceShopperPage() {
       console.log("Disconnected from voice agent");
       setAgentStatus("idle");
     },
-    onError: (error) => {
-      console.error("Voice agent error:", error);
-      toast.error("Voice connection lost", {
-        description: "Check that the voice agent is running. See TESTING_GUIDE.md for setup instructions.",
-        duration: 5000,
-      });
+    onError: () => {
+      // Only show error if we were previously connected (connection lost)
+      // Don't spam errors if we never connected in the first place
+      if (isActive) {
+        toast.error("Voice connection lost", {
+          description: "Check that the voice agent is running. See TESTING_GUIDE.md for setup instructions.",
+          duration: 5000,
+        });
+      }
       setAgentStatus("idle");
     },
     onMessage: (message) => {
@@ -185,12 +188,25 @@ export default function VoiceShopperPage() {
       stopCaptureRef.current = cleanup;
     } catch (error) {
       console.error("Failed to start session:", error);
-      toast.error("Failed to start voice session", {
-        description: "Make sure your microphone is connected and the voice agent server is running. Check browser console for details.",
-        duration: 6000,
-      });
+
+      // Cleanup on error
       setIsActive(false);
       setAgentStatus("idle");
+      disconnect();
+
+      // Show appropriate error message
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      if (errorMessage.includes("microphone") || errorMessage.includes("getUserMedia")) {
+        toast.error("Microphone access denied", {
+          description: "Please allow microphone access in your browser settings and try again.",
+          duration: 6000,
+        });
+      } else {
+        toast.error("Failed to start voice session", {
+          description: "Make sure your microphone is connected and the voice agent server is running at " + VOICE_AGENT_URL,
+          duration: 6000,
+        });
+      }
     } finally {
       setIsConnecting(false);
     }

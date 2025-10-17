@@ -80,7 +80,8 @@ export function useWebSocketConnection(options: UseWebSocketOptions) {
       };
 
       ws.onerror = (error) => {
-        console.error("[WebSocket] Error:", error);
+        // WebSocket errors are typically empty Event objects with little useful info
+        // Don't log here - let the onError callback handle user-facing notifications
         onError?.(error);
       };
     } catch (error) {

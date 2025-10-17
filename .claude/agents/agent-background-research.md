@@ -1,100 +1,106 @@
-name: agent-brightdata-background-research
-description: Implements Background Research using Bright Data
+name: agent-gemini-background-research
+description: Implements Background Research using Gemini API with Google Search
 model: inherit
 color: purple
 tech_stack:
   framework: Next.js
   database: Convex
   auth: Clerk
-  provider: Bright Data
+  provider: Google Gemini API
 generated: 2025-10-17T03:14:00Z
 documentation_sources:
   - https://docs.convex.dev/functions/actions
   - https://docs.convex.dev/functions/http-actions
-  - https://docs.brightdata.com/docs/web-scraper-api/getting-started
-  - https://brightdata.com/products/web-scraper-api
-  - https://brightdata.com/products/scraping-browser
+  - https://ai.google.dev/gemini-api/docs/grounding
+  - https://ai.google.dev/gemini-api/docs
   - https://docs.convex.dev/auth/clerk
   - https://docs.convex.dev/react/use-query
   - https://docs.convex.dev/storage/environment-variables
 
 ---
 
-# Agent: Background Research Implementation with Bright Data
+# Agent: Background Research Implementation with Gemini API
 
 ## Agent Overview
-**Purpose**: This agent provides comprehensive instructions for implementing a "Background Research" feature. This feature will continuously crawl retailers and marketplaces based on a user's query, re-rank and filter results by criteria like price, reviews, and availability, and stream new options into the UI in real-time. This is achieved by integrating Bright Data for web scraping and Convex for backend logic, data storage, and real-time updates, all within a Next.js application using Clerk for authentication.
-**Tech Stack**: Next.js (App Router), Convex (Backend, Database, Real-time), Clerk (Authentication), Bright Data (Web Scraping API).
+**Purpose**: This agent provides comprehensive instructions for implementing a "Background Research" feature. This feature will search for products across retailers and marketplaces based on a user's query, re-rank and filter results by criteria like price, reviews, and availability, and stream new options into the UI in real-time. This is achieved by integrating Google Gemini API with Search grounding for product discovery and Convex for backend logic, data storage, and real-time updates, all within a Next.js application using Clerk for authentication.
+**Tech Stack**: Next.js (App Router), Convex (Backend, Database, Real-time), Clerk (Authentication), Google Gemini API (Product Search with Grounding).
 **Source**: Refer to the `documentation_sources` in the metadata for detailed references.
 
 ## Critical Implementation Knowledge
-### 1. Bright Data & Convex Latest Updates 🚨
+### 1. Gemini API & Convex Integration 🚨
 *   **Convex Actions**: Designed for external API calls (`fetch`), complex business logic, and third-party integrations, operating in a Node.js environment. They are not part of the reactive sync engine directly; to achieve real-time UI updates, actions *must* trigger Convex Mutations to write data to the database. Actions are not automatically retried by Convex upon failure; implement custom retry logic if necessary.
-*   **Bright Data Products**: For web crawling and data extraction, Bright Data offers several key products. The **Web Scraper API** (or Data Collector) provides a cloud-based service for automated data extraction, handling IP rotation, CAPTCHA solving, and parsing into structured formats. For highly dynamic or anti-bot protected websites, the **Scraping Browser API** (compatible with Puppeteer/Playwright) is recommended, offering advanced browser interaction and anti-detection capabilities.
-*   **Bright Data Delivery**: Data can be delivered in batches (collecting data over time then delivering) or in real-time (delivering as collected). Integration patterns often involve API polling or push delivery (webhooks). Given Convex Actions can expose HTTP endpoints, push delivery to a Convex HTTP Action is a viable option for real-time streaming from Bright Data.
+*   **Gemini API with Search Grounding**: Google's Gemini API supports grounding responses with Google Search results. By using the `googleSearch` tool in the API request, Gemini can access real-time web information to find current product listings, prices, and availability. The API returns structured responses that can include product information extracted from search results.
+*   **Gemini API Response Format**: Gemini returns responses in a structured format with `candidates` containing `content` with `parts`. Each part can contain text that may include JSON-formatted product data or structured text that needs to be parsed.
 *   **Convex & Next.js Authentication (Clerk)**: `ConvexProviderWithClerk` is the recommended way to integrate Clerk authentication with Convex in a React/Next.js client-side application. Backend Convex functions (actions, mutations, queries) validate Clerk JWTs using a configured `CLERK_JWT_ISSUER_DOMAIN` environment variable to access user identity via `ctx.auth.getUserIdentity()`.
 
 ### 2. Common Pitfalls & Solutions 🚨
 *   **Pitfall**: Attempting `fetch` calls directly within Convex Queries or Mutations.
-    *   **Solution**: All external API calls, including to Bright Data, *must* be encapsulated within Convex Actions. Queries and Mutations are deterministic and cannot perform arbitrary external I/O.
+    *   **Solution**: All external API calls, including to Gemini API, *must* be encapsulated within Convex Actions. Queries and Mutations are deterministic and cannot perform arbitrary external I/O.
 *   **Pitfall**: Expecting Convex Actions to automatically trigger real-time UI updates.
-    *   **Solution**: After an action fetches and processes data from Bright Data, it *must* call a Convex Mutation (e.g., `ctx.runMutation(internal.myModule.storeData, { ... })`) to persist the data to the Convex database. The Convex frontend, using `useQuery` hooks, will then reactively subscribe to these database changes.
-*   **Pitfall**: Inefficient or unmanaged scraping leading to high Bright Data costs.
-    *   **Solution**: Carefully define your Bright Data collector scripts and monitor usage. Implement robust error handling and only request necessary data. For continuous background research, leverage Convex's scheduler to control the frequency and volume of Bright Data API calls.
+    *   **Solution**: After an action fetches and processes data from Gemini API, it *must* call a Convex Mutation (e.g., `ctx.runMutation(internal.myModule.storeData, { ... })`) to persist the data to the Convex database. The Convex frontend, using `useQuery` hooks, will then reactively subscribe to these database changes.
+*   **Pitfall**: Gemini API rate limiting or quota exceeded.
+    *   **Solution**: Implement proper error handling for rate limit responses. Use exponential backoff for retries. Monitor API usage in the Google Cloud Console and set up appropriate quotas.
 *   **Pitfall**: Authentication failures between Clerk and Convex.
     *   **Solution**: Ensure the Clerk JWT template is correctly set up for Convex in the Clerk dashboard, and the `CLERK_JWT_ISSUER_DOMAIN` environment variable in Convex is correctly pointing to your Clerk Frontend API URL.
-*   **Pitfall**: Scraping dynamic, JavaScript-rendered content without a full browser.
-    *   **Solution**: For modern SPAs or sites with heavy client-side rendering, `fetch` alone might not suffice. Use Bright Data's Scraping Browser API with Puppeteer/Playwright integration, as it handles browser rendering, CAPTCHAs, and anti-bot measures automatically.
+*   **Pitfall**: Gemini API returning unstructured text instead of JSON.
+    *   **Solution**: Implement robust parsing logic that can handle both JSON-formatted responses and structured text. Use regex and text parsing as fallbacks when JSON extraction fails.
 
 ### 3. Best Practices 🚨
-*   **Convex Actions for External API Calls**: Always use Convex Actions for any interaction with Bright Data or other external services.
+*   **Convex Actions for External API Calls**: Always use Convex Actions for any interaction with Gemini API or other external services.
 *   **Convex Mutations for Database Writes**: Design your workflow such that Actions, after gathering external data, delegate database write operations to dedicated Mutations. This preserves Convex's transactional guarantees and real-time reactivity.
-*   **Convex Queries for Real-time Data**: Leverage Convex `useQuery` hooks in your Next.js frontend to subscribe to the database table storing the scraped research results. This ensures the UI updates in real-time as new data is collected and processed.
-*   **Scheduler for Continuous Operations**: For "continuously crawls," utilize Convex's built-in scheduler to periodically trigger your Bright Data scraping action. This automates the background research without needing client-side intervention.
-*   **Secure Environment Variables**: Store Bright Data API keys, collector IDs, and Clerk secrets securely in Convex environment variables. Never hardcode them.
-*   **Robust Error Handling**: Implement `try-catch` blocks in your Convex Actions for Bright Data API calls. Log errors comprehensively and consider implementing retry mechanisms with exponential backoff for transient issues.
-*   **Data Transformation & Schema**: Process and transform raw Bright Data results within your Convex Action before writing to the database via a Mutation. Define clear Convex schemas for your scraped data to ensure type safety, consistency, and efficient querying/filtering.
+*   **Convex Queries for Real-time Data**: Leverage Convex `useQuery` hooks in your Next.js frontend to subscribe to the database table storing the product search results. This ensures the UI updates in real-time as new data is collected and processed.
+*   **Scheduler for Continuous Operations**: For continuous research updates, utilize Convex's built-in scheduler to periodically trigger your Gemini API search action. This automates the background research without needing client-side intervention.
+*   **Secure Environment Variables**: Store Gemini API keys and Clerk secrets securely in Convex environment variables. Never hardcode them.
+*   **Robust Error Handling**: Implement `try-catch` blocks in your Convex Actions for Gemini API calls. Log errors comprehensively and consider implementing retry mechanisms with exponential backoff for transient issues like rate limits.
+*   **Data Transformation & Schema**: Process and transform Gemini API results within your Convex Action before writing to the database via a Mutation. Define clear Convex schemas for your product data to ensure type safety, consistency, and efficient querying/filtering.
 *   **Internal Functions**: When Convex Actions call other Convex Mutations or Actions, use `internal` functions (e.g., `ctx.runMutation(internal.myModule.myMutation, ...)`) for secure and type-safe internal communication.
 
 ## Implementation Steps
 
 ### Backend Implementation
-The backend will primarily use Convex Actions for interacting with Bright Data, Convex Mutations for storing results, and Convex Queries for real-time streaming to the frontend.
+The backend will primarily use Convex Actions for interacting with Gemini API, Convex Mutations for storing results, and Convex Queries for real-time streaming to the frontend.
 
 #### Convex Functions (Primary)
 
-1.  **Define Bright Data Scraping Action (`convex/brightData.ts`)**:
-    *   Create a Convex Action that receives a `query` (e.g., spoken query for products).
-    *   This action will make an HTTP request to the Bright Data Web Scraper API or trigger a specific Data Collector. It will include Bright Data API keys and any necessary parameters for the scraping job (e.g., target marketplaces, search terms).
-    *   If using Bright Data's Scraping Browser API, the action will configure and interact with it (e.g., using `puppeteer-core` if compatible with Convex's Node.js runtime, or directly calling Bright Data's Scraping Browser API endpoints).
-    *   The action will process the raw data returned by Bright Data, extracting relevant product information (price, reviews, availability, URL, images).
+1.  **Define Gemini API Product Search Action (`convex/actions/brightdata.ts`)**:
+    *   Create a Convex Action that receives a `query` (e.g., user's product search).
+    *   This action will make an HTTP request to the Gemini API with Google Search grounding enabled. It will include the Gemini API key and necessary parameters for the search (query text, price constraints).
+    *   The Gemini API will use Google Search to find current product listings and return structured product information.
+    *   The action will process the response from Gemini API, parsing JSON or structured text to extract product information (price, reviews, availability, URL, descriptions).
     *   After processing, the action will call an `internal` Convex Mutation to store the structured product data in the database.
     *   Consider implementing a scheduler to periodically run this action for continuous background research.
 
-2.  **Define Product Storage Mutation (`convex/products.ts`)**:
-    *   Create a Convex Mutation (`internal` if called from the action) that accepts an array of structured product objects.
+2.  **Define Product Storage Mutation (`convex/mutations/brightdata.ts`)**:
+    *   Create an internal Convex Mutation that accepts an array of structured product objects.
     *   This mutation will insert or update product documents in a `products` table in the Convex database.
-    *   Define a clear schema for the `products` table, including fields for `query`, `productName`, `price`, `rating`, `reviewCount`, `availability`, `imageUrl`, `productUrl`, `sourceRetailer`, `lastUpdated`, and `userId` (linked to Clerk).
+    *   The schema is already defined in `convex/schema.ts` with fields for `queryId`, `title`, `price`, `rating`, `reviewsCount`, `availability`, `imageUrl`, `productUrl`, `source`, `searchRank`, and `systemRank`.
 
 3.  **Define Real-time Product Query (`convex/products.ts`)**:
-    *   Create a Convex Query that fetches product results based on a user's initial query or other filters (price range, minimum rating, availability).
-    *   This query will subscribe to changes in the `products` table, ensuring that any new products inserted by the Bright Data action are automatically streamed to the subscribed frontend clients.
-    *   Include authentication checks (`ctx.auth.getUserIdentity()`) to ensure users only see their relevant search results or publicly available information.
+    *   Create a Convex Query that fetches product results based on a query ID and optional filters (price range, minimum rating, availability, source).
+    *   This query subscribes to changes in the `products` table, ensuring that any new products inserted by the Gemini API action are automatically streamed to the subscribed frontend clients.
+    *   Include authentication checks (`ctx.auth.getUserIdentity()`) to ensure users only see their relevant search results.
 
 4.  **Convex Authentication Configuration (`convex/auth.config.ts`)**:
-    *   Configure Convex to validate Clerk JWTs by specifying the `CLERK_JWT_ISSUER_DOMAIN`. This file will define your authentication providers for Convex.
+    *   Configure Convex to validate Clerk JWTs by specifying the `CLERK_JWT_ISSUER_DOMAIN`. This file defines your authentication providers for Convex.
 
 ### Frontend Integration
 The Next.js frontend will interact with Convex using its React SDK, leveraging `useMutation` for triggering actions and `useQuery` for real-time data display. Clerk components will handle user authentication.
 
-*   **Convex Client Provider**: Wrap your Next.js application (or relevant parts) with `ConvexProviderWithClerk` to establish the connection to Convex and integrate Clerk authentication.
-*   **Triggering Research**: Use `useMutation` hook to call the `brightData.scrapeRetailer` action when a user initiates a search query.
-*   **Displaying Real-time Results**: Use `useQuery` hook to fetch and subscribe to the `products.listProducts` query, displaying results as they are streamed into the UI. Implement filtering and re-ranking logic on the client-side as needed, or enhance the Convex query to include server-side filtering.
-*   **User Interface**: Integrate Clerk's UI components for sign-in, sign-up, and user profile management. Ensure that the UI reflects the authentication state.
+*   **Convex Client Provider**: The app is wrapped with `ConvexProviderWithClerk` to establish the connection to Convex and integrate Clerk authentication.
+*   **Triggering Research**: Use `useMutation` hook to call the `queries.createSearchQuery` mutation when a user initiates a search query. This automatically triggers the Gemini API search action.
+*   **Displaying Real-time Results**: Use `useQuery` hook to fetch and subscribe to the `products.getFilteredProducts` query, displaying results as they are streamed into the UI. The UI includes filtering controls for price, rating, and source.
+*   **User Interface**: Clerk's UI components are integrated for sign-in, sign-up, and user profile management in the main layout.
 
 ## Code Patterns
 
-### Convex Backend Functions
+**Note**: The background research feature is fully implemented in the codebase. Refer to the following files for the actual implementation:
+- **Product Search Action**: `convex/actions/brightdata.ts` (uses Gemini API with Google Search grounding)
+- **Product Storage Mutations**: `convex/mutations/brightdata.ts`
+- **Product Queries**: `convex/products.ts`
+- **Search Query Management**: `convex/queries.ts`
+- **Frontend UI**: `app/research/page.tsx`, `components/SearchInput.tsx`, `components/ProductCarousel.tsx`
+
+### Convex Backend Functions (Reference)
 
 1.  **`convex/brightData.ts` (Action to call Bright Data)**:
     ```typescript
