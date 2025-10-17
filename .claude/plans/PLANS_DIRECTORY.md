@@ -41,7 +41,7 @@ This directory contains implementation plans for all major features in the **Han
 
 ---
 
-### 3. Background Research (`feature_background_research.md`)
+### 3. Background Research (`FEATURE_BACKGROUND_RESEARCH_IMPLEMENTATION.md`)
 **Status**: ✅ Implemented & Tested
 **Description**: AI-powered background product research using Google Gemini API with Search grounding. Automatically searches for products across retailers, processes results using AI, and ranks products based on user preferences.
 
@@ -54,6 +54,29 @@ This directory contains implementation plans for all major features in the **Han
 - Real-time product streaming to frontend
 
 **Tech Stack**: Next.js, Convex, Google Gemini API (gemini-2.5-flash)
+
+---
+
+### 4. UI Redesign (`FEATURE_UI_REDESIGN_IMPLEMENTATION.md`)
+**Status**: 📋 Planned - Awaiting User Approval
+**Description**: Complete UI overhaul to create a simplified, voice-first shopping experience with 4 main pages and persistent sidebar navigation. Transforms the app into a clean, minimal interface focused on voice interaction.
+
+**Key Components**:
+- Persistent sidebar navigation
+- Voice-first main dashboard with large microphone button
+- History page with conversation logs and preference management
+- Saved products page with grid display
+- Settings page with logout and configuration
+- Responsive design for mobile, tablet, and desktop
+- Integration with Voice Shopper, Background Research, and Preference Memory features
+
+**Tech Stack**: Next.js 15, Tailwind CSS 4, shadcn/ui, Convex, Clerk
+
+**Pages**:
+1. Main Dashboard (`/`) - Voice interaction and product display
+2. History (`/history`) - Past conversations and preference management
+3. Saved Products (`/saved`) - Collection of saved items
+4. Settings (`/settings`) - User profile and logout
 
 ---
 
@@ -119,5 +142,5 @@ This directory is referenced in the main `CLAUDE.md` file under "Custom Agents, 
 
 ---
 
-**Last Updated**: October 16, 2025
-**Total Plans**: 3
+**Last Updated**: October 17, 2025
+**Total Plans**: 4
