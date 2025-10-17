@@ -35,10 +35,11 @@ export const createSearchQuery = mutation({
       updatedAt: now,
     });
 
-    // Schedule the search products action to run immediately
+    // Schedule the Bright Data search action to run immediately
+    // This will use Bright Data SERP API for real product searches
     await ctx.scheduler.runAfter(
       0,
-      internal.actions.searchProducts.searchProducts,
+      internal.actions.brightdata.initiateProductSearch,
       {
         queryId,
         searchText: args.searchText,
