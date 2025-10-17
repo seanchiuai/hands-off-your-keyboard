@@ -471,4 +471,19 @@ body {
     background-size: 200% 200%;
     animation: gradient-shift 3s ease infinite;
   }
+
+  /* Progress bar animation for active searches */
+  @keyframes progress-indeterminate {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(400%);
+    }
+  }
+
+  .animate-progress-indeterminate {
+    width: 25%;
+    animation: progress-indeterminate 1.5s ease-in-out infinite;
+  }
 }

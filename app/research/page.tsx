@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -10,10 +10,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
 
 export default function ResearchPage() {
+  const searchParams = useSearchParams();
+  const queryIdFromUrl = searchParams.get("queryId");
+  
   const [activeQueryId, setActiveQueryId] = useState<Id<"queries"> | null>(null);
   const [selectedTab, setSelectedTab] = useState<string>("search");
+
+  // Set active query from URL parameter
+  useEffect(() => {
+    if (queryIdFromUrl) {
+      setActiveQueryId(queryIdFromUrl as Id<"queries">);
+      setSelectedTab("results");
+    }
+  }, [queryIdFromUrl]);
 
   // Get user's recent queries
   const recentQueries = useQuery(api.queries.getUserQueries, { limit: 10 });

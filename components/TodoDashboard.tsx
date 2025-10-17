@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
+import { ResearchTasksPanel } from "./ResearchTasksPanel";
 
 type Tab = "all" | "pending" | "completed";
 
@@ -96,11 +97,22 @@ export default function TodoDashboard() {
   const completedCount = todos?.filter((t) => t.status === "completed").length || 0;
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <div className="mb-10">
         <h1 className="text-4xl font-mona-heading mb-3 text-gradient-primary">My Tasks</h1>
         <p className="text-muted-foreground text-lg">Organize your day with style</p>
       </div>
+
+      {/* Research Tasks Section */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-xl font-semibold">🔬 Deep Research</h2>
+          <span className="text-sm text-muted-foreground">Live product searches</span>
+        </div>
+        <ResearchTasksPanel />
+      </div>
+
+      <div className="h-px bg-border/50 my-8"></div>
 
       <div className="mb-8 card-elevated rounded-2xl p-6">
         <form onSubmit={handleCreateTodo} className="space-y-4">
