@@ -42,17 +42,18 @@ This directory contains implementation plans for all major features in the **Han
 ---
 
 ### 3. Background Research (`feature_background_research.md`)
-**Status**: Planned
-**Description**: Continuous background product research using Bright Data's web scraping API. Automatically searches e-commerce sites, processes results, and ranks products based on user preferences.
+**Status**: ✅ Implemented & Tested
+**Description**: AI-powered background product research using Google Gemini API with Search grounding. Automatically searches for products across retailers, processes results using AI, and ranks products based on user preferences.
 
 **Key Components**:
-- Bright Data Web Scraper API integration
-- Convex actions for asynchronous scraping
+- Google Gemini API integration with Search grounding
+- Convex actions for asynchronous AI-powered search
+- JSON and text response parsing
 - Product filtering and re-ranking logic
 - Query status tracking
-- Scheduled continuous searches
+- Real-time product streaming to frontend
 
-**Tech Stack**: Next.js, Convex, Bright Data API
+**Tech Stack**: Next.js, Convex, Google Gemini API (gemini-2.5-flash)
 
 ---
 
