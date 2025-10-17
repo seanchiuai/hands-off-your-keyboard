@@ -9,6 +9,7 @@
  */
 
 import type * as actions_brightdata from "../actions/brightdata.js";
+import type * as actions_searchProducts from "../actions/searchProducts.js";
 import type * as http from "../http.js";
 import type * as interactionSignals from "../interactionSignals.js";
 import type * as mutations_brightdata from "../mutations/brightdata.js";
@@ -40,6 +41,7 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   "actions/brightdata": typeof actions_brightdata;
+  "actions/searchProducts": typeof actions_searchProducts;
   http: typeof http;
   interactionSignals: typeof interactionSignals;
   "mutations/brightdata": typeof mutations_brightdata;

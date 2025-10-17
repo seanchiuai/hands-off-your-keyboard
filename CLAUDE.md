@@ -5,6 +5,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Claude Code Instructions
 
 ### Custom Agents, Plans, and Specification
+
+**IMPORTANT:** When searching for custom agents, plans, or specifications, always look under the `/.claude` directory.
+
 - **`/agents`** - Contains custom agent definitions for specialized tasks
   - Before implementing features, check if a relevant agent exists in this directory
   - Invoke custom agents using the Task tool when their expertise matches the request

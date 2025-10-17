@@ -29,46 +29,50 @@ export const initiateProductSearch = internalAction({
 
       // Get Bright Data configuration from environment variables
       const BRIGHT_DATA_API_KEY = process.env.BRIGHT_DATA_API_KEY;
-      const BRIGHT_DATA_COLLECTOR_ID = process.env.BRIGHT_DATA_COLLECTOR_ID;
-      const BRIGHT_DATA_ZONE = process.env.BRIGHT_DATA_ZONE || "static";
+      const BRIGHT_DATA_ZONE = process.env.BRIGHT_DATA_ZONE || "serp_api1";
 
-      if (!BRIGHT_DATA_API_KEY || !BRIGHT_DATA_COLLECTOR_ID) {
+      if (!BRIGHT_DATA_API_KEY) {
         throw new Error(
-          "Bright Data API credentials not configured. Please set BRIGHT_DATA_API_KEY and BRIGHT_DATA_COLLECTOR_ID environment variables."
+          "Bright Data API credentials not configured. Please set BRIGHT_DATA_API_KEY environment variable."
         );
       }
 
-      // Prepare the payload for Bright Data
-      // Note: The exact structure depends on your Bright Data collector configuration
-      const brightDataPayload = {
-        collector: BRIGHT_DATA_COLLECTOR_ID,
-        payload: {
-          query: args.searchText,
-          // Add any additional parameters based on preferences
-          ...(args.preferences.minPrice && { min_price: args.preferences.minPrice }),
-          ...(args.preferences.maxPrice && { max_price: args.preferences.maxPrice }),
-          ...(args.preferences.minRating && { min_rating: args.preferences.minRating }),
-          ...(args.preferences.targetRetailers && {
-            retailers: args.preferences.targetRetailers,
-          }),
-        },
-      };
-
-      console.log("Initiating Bright Data search:", {
-        queryId: args.queryId,
-        searchText: args.searchText,
+      // Build Google Shopping URL with query parameters
+      const searchParams = new URLSearchParams({
+        q: args.searchText,
+        tbm: "shop", // Google Shopping
+        hl: "en", // Language: English
+        gl: "us", // Country: United States
+        num: "20", // Number of results
       });
 
-      // Make request to Bright Data API
-      // Note: This is a simplified example. Actual implementation depends on Bright Data API
-      const response = await fetch("https://api.brightdata.com/dca/trigger", {
+      // Add price filter if specified
+      if (args.preferences.minPrice || args.preferences.maxPrice) {
+        const minPrice = args.preferences.minPrice || 0;
+        const maxPrice = args.preferences.maxPrice || 999999;
+        searchParams.append("tbs", `price:1,ppr_min:${minPrice},ppr_max:${maxPrice}`);
+      }
+
+      const googleShoppingUrl = `https://www.google.com/search?${searchParams.toString()}&brd_json=1`;
+
+      console.log("Initiating Bright Data SERP API search:", {
+        queryId: args.queryId,
+        searchText: args.searchText,
+        url: googleShoppingUrl,
+      });
+
+      // Make request to Bright Data SERP API
+      const response = await fetch("https://api.brightdata.com/request", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${BRIGHT_DATA_API_KEY}`,
-          "X-BD-Agent": BRIGHT_DATA_ZONE,
         },
-        body: JSON.stringify(brightDataPayload),
+        body: JSON.stringify({
+          zone: BRIGHT_DATA_ZONE,
+          url: googleShoppingUrl,
+          format: "json",
+        }),
       });
 
       if (!response.ok) {
@@ -129,7 +133,7 @@ export const initiateProductSearch = internalAction({
 });
 
 /**
- * Process raw Bright Data results into structured product data
+ * Process raw Bright Data SERP API results into structured product data
  */
 function processResults(brightDataResult: any): Array<{
   title: string;
@@ -144,27 +148,81 @@ function processResults(brightDataResult: any): Array<{
   source: string;
   searchRank: number;
 }> {
-  // This is a placeholder implementation
-  // The actual structure depends on your Bright Data collector configuration
+  try {
+    // SERP API returns shopping results in different possible formats
+    let shoppingResults: any[] = [];
 
-  if (!brightDataResult.data || !Array.isArray(brightDataResult.data)) {
-    console.warn("No data found in Bright Data result");
+    // Check for standard SERP API response structure
+    if (brightDataResult.shopping_results && Array.isArray(brightDataResult.shopping_results)) {
+      shoppingResults = brightDataResult.shopping_results;
+    } else if (brightDataResult.inline_shopping && Array.isArray(brightDataResult.inline_shopping)) {
+      shoppingResults = brightDataResult.inline_shopping;
+    } else if (brightDataResult.results && Array.isArray(brightDataResult.results)) {
+      shoppingResults = brightDataResult.results.filter((r: any) => r.type === "shopping");
+    } else if (Array.isArray(brightDataResult)) {
+      // If the result is directly an array
+      shoppingResults = brightDataResult;
+    }
+
+    if (shoppingResults.length === 0) {
+      console.warn("No shopping results found in Bright Data SERP API response");
+      return [];
+    }
+
+    console.log(`Processing ${shoppingResults.length} shopping results from Bright Data`);
+
+    return shoppingResults
+      .map((item: any, index: number) => {
+        try {
+          // Extract price (handle different formats like "$123.45" or "123.45")
+          let price = 0;
+          if (item.price) {
+            if (typeof item.price === "number") {
+              price = item.price;
+            } else if (typeof item.price === "string") {
+              price = parseFloat(item.price.replace(/[^0-9.]/g, "")) || 0;
+            } else if (item.price.value) {
+              price = parseFloat(item.price.value);
+            }
+          }
+
+          // Extract rating
+          let rating: number | undefined;
+          if (item.rating) {
+            rating = typeof item.rating === "number" ? item.rating : parseFloat(item.rating);
+          }
+
+          // Extract review count
+          let reviewsCount: number | undefined;
+          if (item.reviews) {
+            reviewsCount = typeof item.reviews === "number" ? item.reviews : parseInt(item.reviews);
+          } else if (item.reviews_count) {
+            reviewsCount = typeof item.reviews_count === "number" ? item.reviews_count : parseInt(item.reviews_count);
+          }
+
+          return {
+            title: item.title || item.name || "Untitled Product",
+            imageUrl: item.thumbnail || item.image || item.imageUrl,
+            productUrl: item.link || item.url || item.productUrl || "",
+            price,
+            currency: item.currency || "USD",
+            description: item.snippet || item.description || undefined,
+            reviewsCount,
+            rating,
+            availability: item.availability !== "Out of stock" && item.in_stock !== false,
+            source: item.source || item.merchant || item.seller || "Google Shopping",
+            searchRank: index + 1,
+          };
+        } catch (itemError) {
+          console.error("Error processing individual product:", itemError);
+          return null;
+        }
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null && item.price > 0);
+  } catch (error) {
+    console.error("Error processing Bright Data results:", error);
     return [];
   }
-
-  return brightDataResult.data.map((item: any, index: number) => ({
-    title: item.title || item.name || "Untitled Product",
-    imageUrl: item.image || item.imageUrl || item.image_url,
-    productUrl: item.url || item.productUrl || item.product_url || "",
-    price: parseFloat(item.price || item.price_value || 0),
-    currency: item.currency || "USD",
-    description: item.description || item.desc || undefined,
-    reviewsCount: item.reviews_count || item.reviewCount || parseInt(item.reviews) || undefined,
-    rating: item.rating ? parseFloat(item.rating) : undefined,
-    availability: item.in_stock !== false && item.availability !== "out_of_stock",
-    source: item.retailer || item.source || item.merchant || "Unknown",
-    searchRank: index + 1,
-  }));
 }
 
 /**
