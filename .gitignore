@@ -49,3 +49,11 @@ package-lock.json
 
 # IDE configurations
 .cursor/
+
+# Python
+voice_agent/venv/
+voice_agent/__pycache__/
+voice_agent/*.pyc
+*.pyo
+*.pyd
+.Python

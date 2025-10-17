@@ -13,12 +13,15 @@ from dotenv import load_dotenv
 
 # Import Pipecat framework components
 try:
-    from pipecat.pipeline import Pipeline
-    from pipecat.processors.aggregators.llm_response import LLMResponseAggregator
-    from pipecat.processors.aggregators.sentence import SentenceAggregator
+    from pipecat.pipeline.pipeline import Pipeline
+    from pipecat.pipeline.task import PipelineTask, PipelineParams
+    from pipecat.pipeline.runner import PipelineRunner
+    from pipecat.processors.aggregators.llm_context import LLMContext
+    from pipecat.processors.aggregators.llm_response_universal import LLMContextAggregatorPair
     from pipecat.services.google import GoogleLLMService, GoogleTTSService
-    from pipecat.transports.websocket import WebsocketServerTransport
-    from pipecat.vad.silero import SileroVAD
+    from pipecat.audio.vad.silero import SileroVADAnalyzer
+    from pipecat.audio.vad.vad_analyzer import VADParams
+    from pipecat.frames.frames import LLMRunFrame, EndFrame
 except ImportError as e:
     print(f"Error: Pipecat dependencies not installed. Run: pip install -r requirements.txt")
     print(f"Details: {e}")
@@ -77,16 +80,17 @@ class VoiceShopperAgent:
 
         logger.info("Configuration validated successfully")
 
-    async def create_pipeline(self, session_id: str, user_id: str) -> Pipeline:
+    async def create_pipeline(self, session_id: str, user_id: str, transport):
         """
         Create a Pipecat pipeline for a voice session
 
         Args:
             session_id: Unique identifier for this voice session
             user_id: User identifier from Clerk authentication
+            transport: WebSocket transport for this session
 
         Returns:
-            Configured Pipecat pipeline
+            Configured PipelineTask
         """
         logger.info(f"Creating pipeline for session {session_id}, user {user_id}")
 
@@ -102,43 +106,37 @@ class VoiceShopperAgent:
             voice_id="en-US-Neural2-F",  # Female voice
         )
 
-        # Initialize VAD (Voice Activity Detection)
-        vad = SileroVAD()
-
-        # Create sentence aggregator to group words into sentences
-        sentence_aggregator = SentenceAggregator()
-
-        # Create LLM response aggregator
-        llm_aggregator = LLMResponseAggregator()
-
         # Build the system prompt with context
         system_prompt = get_system_prompt()
 
+        # Setup conversation context
+        messages = [
+            {
+                "role": "system",
+                "content": system_prompt
+            }
+        ]
+
+        context = LLMContext(messages)
+        context_aggregator = LLMContextAggregatorPair(context)
+
         # Create the pipeline
         # The pipeline flow:
-        # 1. Audio input → VAD (detect when user is speaking)
-        # 2. VAD → STT (speech to text)
-        # 3. STT → Sentence Aggregator (group into sentences)
-        # 4. Sentences → LLM (Gemini processes and responds)
-        # 5. LLM → Custom Actions (triggers research, saves items, etc.)
-        # 6. LLM Response → TTS (text to speech)
-        # 7. TTS → Audio output to user
+        # 1. Audio input from transport
+        # 2. STT (handled by Google LLM service)
+        # 3. Context aggregator (manages conversation)
+        # 4. LLM (Gemini processes and responds)
+        # 5. TTS (text to speech)
+        # 6. Audio output via transport
 
         pipeline = Pipeline([
-            vad,
-            sentence_aggregator,
+            transport.input(),
+            context_aggregator.user(),
             llm_service,
-            llm_aggregator,
             tts_service,
+            transport.output(),
+            context_aggregator.assistant()
         ])
-
-        # Configure LLM with system prompt and custom actions
-        await llm_service.set_context({
-            "messages": [
-                {"role": "system", "content": system_prompt},
-            ],
-            "tools": self.actions.get_tool_definitions(),
-        })
 
         # Set up custom action handlers
         llm_service.register_function("search_products",
@@ -148,8 +146,17 @@ class VoiceShopperAgent:
         llm_service.register_function("get_user_preferences",
             lambda args: self.actions.get_user_preferences(user_id))
 
+        # Create task with configuration
+        task = PipelineTask(
+            pipeline,
+            params=PipelineParams(
+                enable_metrics=True,
+                allow_interruptions=True
+            )
+        )
+
         logger.info(f"Pipeline created successfully for session {session_id}")
-        return pipeline
+        return task
 
     async def handle_session(self, websocket, path):
         """
@@ -161,27 +168,27 @@ class VoiceShopperAgent:
         """
         # Parse session_id and user_id from WebSocket URL query parameters
         from urllib.parse import urlparse, parse_qs
-        
+
         try:
             # Parse query parameters from WebSocket path
             parsed = urlparse(path)
             query_params = parse_qs(parsed.query)
-            
+
             # Extract session ID (required)
             session_id = query_params.get('sessionId', [None])[0]
             if not session_id:
                 logger.warning(f"No sessionId in WebSocket connection: {path}")
                 session_id = f"session_{int(asyncio.get_event_loop().time() * 1000)}"
-            
+
             # Extract user ID (optional, may come from authentication)
             user_id = query_params.get('userId', [None])[0]
             if not user_id:
                 # Try to get from authentication headers or use generated ID
                 user_id = f"user_{int(asyncio.get_event_loop().time() * 1000)}"
                 logger.info(f"No userId provided, using generated: {user_id}")
-            
+
             logger.info(f"New session started: {session_id} for user {user_id}")
-            
+
         except Exception as e:
             logger.error(f"Error parsing WebSocket parameters: {e}")
             session_id = f"session_{int(asyncio.get_event_loop().time() * 1000)}"
@@ -189,14 +196,25 @@ class VoiceShopperAgent:
             logger.warning(f"Using generated IDs: session={session_id}, user={user_id}")
 
         try:
+            # For now, use LocalAudioTransport for development
+            # TODO: Implement proper WebSocket transport when available
+            from pipecat.transports.local.audio import LocalAudioTransport, LocalAudioParams
+
+            transport = LocalAudioTransport(
+                params=LocalAudioParams(
+                    audio_in_enabled=True,
+                    audio_out_enabled=True,
+                    audio_in_sample_rate=16000,
+                    audio_out_sample_rate=24000
+                )
+            )
+
             # Create the pipeline for this session
-            pipeline = await self.create_pipeline(session_id, user_id)
+            task = await self.create_pipeline(session_id, user_id, transport)
 
-            # Create WebSocket transport
-            transport = WebsocketServerTransport(websocket)
-
-            # Connect pipeline to transport
-            await pipeline.run(transport)
+            # Run the pipeline
+            runner = PipelineRunner()
+            await runner.run(task)
 
             logger.info(f"Session {session_id} completed successfully")
 
@@ -210,25 +228,43 @@ class VoiceShopperAgent:
                 timestamp=asyncio.get_event_loop().time() * 1000
             )
 
-    async def start_server(self):
-        """Start the WebSocket server"""
-        import websockets
+    async def run_local(self):
+        """Run the agent locally for testing"""
+        from pipecat.transports.local.audio import LocalAudioTransport, LocalAudioParams
 
-        logger.info(f"Starting Voice Shopper Agent server on {self.host}:{self.port}")
+        logger.info("Starting Voice Shopper Agent (local mode)")
         logger.info(f"Convex backend: {self.convex_url}")
+        logger.info("Speak into your microphone to interact with the agent")
 
-        async with websockets.serve(self.handle_session, self.host, self.port):
-            logger.info(f"Server is running! Connect WebSocket clients to ws://{self.host}:{self.port}")
-            await asyncio.Future()  # Run forever
+        # Create local audio transport
+        transport = LocalAudioTransport(
+            params=LocalAudioParams(
+                audio_in_enabled=True,
+                audio_out_enabled=True,
+                audio_in_sample_rate=16000,
+                audio_out_sample_rate=24000
+            )
+        )
+
+        # Create session IDs for testing
+        session_id = f"local_session_{int(asyncio.get_event_loop().time() * 1000)}"
+        user_id = "local_user"
+
+        # Create the pipeline
+        task = await self.create_pipeline(session_id, user_id, transport)
+
+        # Run the pipeline
+        runner = PipelineRunner(handle_sigint=True)
+        await runner.run(task)
 
     def run(self):
-        """Run the agent server"""
+        """Run the agent"""
         try:
-            asyncio.run(self.start_server())
+            asyncio.run(self.run_local())
         except KeyboardInterrupt:
-            logger.info("Server stopped by user")
+            logger.info("Agent stopped by user")
         except Exception as e:
-            logger.error(f"Server error: {e}", exc_info=True)
+            logger.error(f"Agent error: {e}", exc_info=True)
             sys.exit(1)
 
 

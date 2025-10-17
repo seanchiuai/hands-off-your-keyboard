@@ -97,8 +97,8 @@ export default function TodoDashboard() {
   const completedCount = todos?.filter((t) => t.status === "completed").length || 0;
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="mb-10">
+    <div className="max-w-6xl mx-auto page-transition">
+      <div className="mb-10 animate-fade-in-down">
         <h1 className="text-4xl font-mona-heading mb-3 text-gradient-primary">My Tasks</h1>
         <p className="text-muted-foreground text-lg">Organize your day with style</p>
       </div>
@@ -114,14 +114,14 @@ export default function TodoDashboard() {
 
       <div className="h-px bg-border/50 my-8"></div>
 
-      <div className="mb-8 card-elevated rounded-2xl p-6">
+      <div className="mb-8 card-elevated rounded-2xl p-6 animate-scale-in hover-lift transition-all-smooth">
         <form onSubmit={handleCreateTodo} className="space-y-4">
           <input
             type="text"
             value={newTodoTitle}
             onChange={(e) => setNewTodoTitle(e.target.value)}
             placeholder="What needs to be done? ✨"
-            className="w-full px-5 py-4 bg-card/80 rounded-lg border border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-base placeholder:text-muted-foreground/70 transition-smooth"
+            className="w-full px-5 py-4 bg-card/80 rounded-lg border border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-base placeholder:text-muted-foreground/70 transition-all-smooth"
           />
           {newTodoTitle && (
             <>
@@ -135,7 +135,7 @@ export default function TodoDashboard() {
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  className="px-6 py-3 gradient-primary text-white text-sm font-bold rounded-lg glow-hover transition-smooth spring-button"
+                  className="px-6 py-3 gradient-primary text-white text-sm font-bold rounded-lg glow-hover transition-smooth spring-button hover-lift button-press"
                 >
                   ✨ Add Task
                 </button>
@@ -145,7 +145,7 @@ export default function TodoDashboard() {
                     setNewTodoTitle("");
                     setNewTodoDescription("");
                   }}
-                  className="px-5 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-card/50 rounded-lg transition-smooth"
+                  className="px-5 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-card/50 rounded-lg transition-smooth button-press"
                 >
                   Cancel
                 </button>
@@ -217,11 +217,11 @@ export default function TodoDashboard() {
         </button>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 stagger-fade-in">
         {!filteredTodos ? (
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="card-simple rounded-xl p-6">
+              <div key={i} className="card-simple rounded-xl p-6 animate-fade-in">
                 <div className="flex items-start gap-3">
                   <div className="skeleton w-6 h-6 rounded-md mt-1"></div>
                   <div className="flex-1 space-y-2">
@@ -245,7 +245,7 @@ export default function TodoDashboard() {
           filteredTodos.map((todo) => (
             <div
               key={todo._id}
-              className="group card-simple rounded-xl p-6 hover:bg-card/80 transition-smooth"
+              className="group card-simple rounded-xl p-6 hover:bg-card/80 transition-all-smooth hover-lift card-enter"
             >
               {editingId === todo._id ? (
                 <div className="space-y-2">
