@@ -205,15 +205,16 @@ export default function VoiceShopperPage() {
   }, [isActive, sessionId, currentProducts.length]);
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">Voice Shopper</h1>
-          <p className="text-muted-foreground text-lg">
-            Talk to your AI shopping assistant to find the perfect products
-          </p>
-        </div>
+    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+      <div className="px-4 lg:px-6">
+        <div className="space-y-8">
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <h1 className="text-4xl font-bold tracking-tight">Voice Shopper</h1>
+            <p className="text-muted-foreground text-lg">
+              Talk to your AI shopping assistant to find the perfect products
+            </p>
+          </div>
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -338,6 +339,7 @@ export default function VoiceShopperPage() {
               </TabsContent>
             </Tabs>
           </div>
+        </div>
         </div>
       </div>
     </div>

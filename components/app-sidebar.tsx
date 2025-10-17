@@ -5,6 +5,7 @@ import {
   IconHelp,
   IconInnerShadowTop,
   IconListDetails,
+  IconMicrophone,
   IconSettings,
 } from "@tabler/icons-react"
 
@@ -27,6 +28,11 @@ const data = {
       title: "Tasks",
       url: "/tasks",
       icon: IconListDetails,
+    },
+    {
+      title: "Voice Shopper",
+      url: "/voice-shopper",
+      icon: IconMicrophone,
     },
   ],
   navSecondary: [
