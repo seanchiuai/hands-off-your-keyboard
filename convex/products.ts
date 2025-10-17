@@ -183,6 +183,59 @@ export const storeProducts = internalMutation({
 });
 
 /**
+ * Save a product from research results to user's saved items
+ */
+export const saveProduct = mutation({
+  args: {
+    productId: v.id("products"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get the product
+    const product = await ctx.db.get(args.productId);
+    if (!product) {
+      throw new Error("Product not found");
+    }
+
+    // Verify the query belongs to the user
+    const query = await ctx.db.get(product.queryId);
+    if (!query || query.userId !== identity.subject) {
+      throw new Error("Unauthorized");
+    }
+
+    // Check if already saved
+    const existing = await ctx.db
+      .query("saved_items")
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .filter((q) => q.eq(q.field("productId"), args.productId))
+      .first();
+
+    if (existing) {
+      return existing._id;
+    }
+
+    // Save the product
+    const savedId = await ctx.db.insert("saved_items", {
+      userId: identity.subject,
+      sessionId: `research_${Date.now()}`,
+      productId: args.productId,
+      productName: product.title,
+      description: product.description,
+      imageUrl: product.imageUrl,
+      productUrl: product.productUrl,
+      price: product.price,
+      savedAt: Date.now(),
+    });
+
+    return savedId;
+  },
+});
+
+/**
  * Delete all products for a query
  */
 export const deleteProductsForQuery = mutation({

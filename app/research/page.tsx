@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { SearchInput } from "@/components/SearchInput";
@@ -17,6 +17,12 @@ export default function ResearchPage() {
 
   // Get user's recent queries
   const recentQueries = useQuery(api.queries.getUserQueries, { limit: 10 });
+  
+  // Get active query status for progress tracking
+  const activeQuery = useQuery(
+    api.queries.getQueryStatus,
+    activeQueryId ? { queryId: activeQueryId } : "skip"
+  );
 
   const handleSearchCreated = (queryId: string) => {
     setActiveQueryId(queryId as Id<"queries">);
@@ -28,10 +34,16 @@ export default function ResearchPage() {
     setSelectedTab("results");
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleSaveProduct = (productId: string) => {
-    toast.success("Product saved to your list!");
-    // TODO: Implement actual save functionality
+  const saveProduct = useMutation(api.products.saveProduct);
+
+  const handleSaveProduct = async (productId: string) => {
+    try {
+      await saveProduct({ productId });
+      toast.success("Product saved to your list!");
+    } catch (error) {
+      console.error("Failed to save product:", error);
+      toast.error("Failed to save product. Please try again.");
+    }
   };
 
   return (
@@ -56,7 +68,35 @@ export default function ResearchPage() {
 
         <TabsContent value="results" className="mt-6">
           {activeQueryId ? (
-            <ProductCarousel queryId={activeQueryId} onSaveProduct={handleSaveProduct} />
+            <div className="space-y-4">
+              {/* Show progress indicator when searching */}
+              {activeQuery && (activeQuery.status === "pending" || activeQuery.status === "searching") && (
+                <Card className="bg-blue-50 border-blue-200">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <h3 className="font-semibold text-blue-900">
+                          {activeQuery.status === "pending" ? "Initializing search..." : "Searching for products..."}
+                        </h3>
+                        <p className="text-sm text-blue-700">
+                          {activeQuery.status === "pending" 
+                            ? "Your search is being prepared. This usually takes just a few seconds."
+                            : "We're scanning multiple retailers to find the best products for you. This may take 10-30 seconds."}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-blue-600 mt-3">
+                          <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                          <span>Searching: {activeQuery.searchText}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              <ProductCarousel queryId={activeQueryId} onSaveProduct={handleSaveProduct} />
+            </div>
           ) : (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">

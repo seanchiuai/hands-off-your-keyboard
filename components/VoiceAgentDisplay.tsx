@@ -14,6 +14,7 @@ interface ConversationMessage {
 
 interface VoiceAgentDisplayProps {
   messages: ConversationMessage[];
+  interimTranscript?: string;
   isAgentSpeaking?: boolean;
   agentStatus?: "idle" | "listening" | "thinking" | "speaking" | "searching";
   className?: string;
@@ -25,6 +26,7 @@ interface VoiceAgentDisplayProps {
  */
 export function VoiceAgentDisplay({
   messages,
+  interimTranscript = "",
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isAgentSpeaking = false,
   agentStatus = "idle",
@@ -32,10 +34,10 @@ export function VoiceAgentDisplay({
 }: VoiceAgentDisplayProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive or interim transcript changes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, interimTranscript]);
 
   const getStatusBadge = () => {
     const statusConfig = {
@@ -83,6 +85,24 @@ export function VoiceAgentDisplay({
                 timestamp={message.timestamp}
               />
             ))}
+            {/* Show interim transcription as typing indicator */}
+            {interimTranscript && (
+              <div className="flex gap-3 flex-row-reverse">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600">
+                  <User className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex flex-col gap-1 max-w-[80%] items-end">
+                  <div className="rounded-2xl px-4 py-2 shadow-sm bg-blue-600/20 text-blue-600 border border-blue-600/30">
+                    <p className="text-sm whitespace-pre-wrap break-words italic">
+                      {interimTranscript}
+                    </p>
+                  </div>
+                  <span className="text-xs text-muted-foreground px-2">
+                    Speaking...
+                  </span>
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
         )}

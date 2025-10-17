@@ -93,7 +93,10 @@ export function SearchInput({ onSearchCreated, showPreferences = true }: SearchI
       }
     } catch (error) {
       console.error("Error creating search:", error);
-      toast.error("Failed to create search. Please try again.");
+      toast.error("Failed to create search", {
+        description: "There was an error starting your search. Check your connection and try again. If the problem persists, try simpler search terms.",
+        duration: 5000,
+      });
     } finally {
       setIsSubmitting(false);
     }

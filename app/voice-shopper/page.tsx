@@ -37,6 +37,7 @@ export default function VoiceShopperPage() {
   const [isActive, setIsActive] = useState(false);
   const [agentStatus, setAgentStatus] = useState<AgentStatus>("idle");
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
+  const [interimTranscript, setInterimTranscript] = useState<string>("");
   const [currentProducts, setCurrentProducts] = useState<Product[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [savedProductIds, setSavedProductIds] = useState<Set<string>>(new Set());
@@ -48,9 +49,8 @@ export default function VoiceShopperPage() {
   const saveShoppingItem = useMutation(api.voiceShopper.saveShoppingItem);
   const shoppingHistory = useQuery(api.voiceShopper.getShoppingHistory, { limit: 20 });
 
-  // Mock: In production, this would be replaced with actual research results query
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const researchResults = useQuery(
+  // Get actual session items from Convex
+  const sessionItems = useQuery(
     api.voiceShopper.getSessionItems,
     sessionId ? { sessionId } : "skip"
   );
@@ -80,7 +80,10 @@ export default function VoiceShopperPage() {
     },
     onError: (error) => {
       console.error("Voice agent error:", error);
-      toast.error("Voice agent connection error");
+      toast.error("Voice connection lost", {
+        description: "Check that the voice agent is running. See TESTING_GUIDE.md for setup instructions.",
+        duration: 5000,
+      });
       setAgentStatus("idle");
     },
     onMessage: (message) => {
@@ -94,6 +97,25 @@ export default function VoiceShopperPage() {
             timestamp: Date.now(),
           },
         ]);
+      } else if (message.type === "transcription") {
+        // Handle user speech transcription
+        if (message.data.is_final) {
+          // Final transcription - add as user message
+          setInterimTranscript("");
+          if (message.data.text && message.data.text.trim()) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                speaker: "user",
+                text: message.data.text,
+                timestamp: Date.now(),
+              },
+            ]);
+          }
+        } else {
+          // Interim transcription - show as typing indicator
+          setInterimTranscript(message.data.text || "");
+        }
       } else if (message.type === "status") {
         // Update agent status
         if (message.data.status === "thinking") {
@@ -163,7 +185,10 @@ export default function VoiceShopperPage() {
       stopCaptureRef.current = cleanup;
     } catch (error) {
       console.error("Failed to start session:", error);
-      toast.error("Failed to start voice session");
+      toast.error("Failed to start voice session", {
+        description: "Make sure your microphone is connected and the voice agent server is running. Check browser console for details.",
+        duration: 6000,
+      });
       setIsActive(false);
       setAgentStatus("idle");
     } finally {
@@ -206,20 +231,27 @@ export default function VoiceShopperPage() {
       toast.success("Voice session ended");
     } catch (error) {
       console.error("Failed to end session:", error);
-      toast.error("Failed to end session");
+      toast.error("Failed to end session", {
+        description: "The session may have already ended. You can safely start a new session.",
+        duration: 4000,
+      });
     }
   };
 
   // Handle product save
   const handleSaveProduct = async (productId: string) => {
     if (!sessionId) {
-      toast.error("No active session");
+      toast.error("No active session", {
+        description: "Please start a voice session first before saving products.",
+      });
       return;
     }
 
     const product = currentProducts.find((p) => p.productId === productId);
     if (!product) {
-      toast.error("Product not found");
+      toast.error("Product not found", {
+        description: "This product may have been removed from the results.",
+      });
       return;
     }
 
@@ -245,56 +277,28 @@ export default function VoiceShopperPage() {
       toast.success(`Saved ${product.title}`);
     } catch (error) {
       console.error("Failed to save product:", error);
-      toast.error("Failed to save product");
+      toast.error("Failed to save product", {
+        description: "There was an error saving this product. Please try again or check your connection.",
+        duration: 4000,
+      });
     }
   };
 
-  // Mock: Simulate receiving products from research
-  // In production, this would come from WebSocket messages or Convex queries
+  // Update products when session items change
   useEffect(() => {
-    if (isActive && sessionId) {
-      // Simulate products appearing after a search
-      const mockProducts: Product[] = [
-        {
-          productId: "1",
-          title: "Premium Wireless Headphones",
-          description: "Industry-leading noise cancellation, 30-hour battery life",
-          price: 349.99,
-          imageUrl: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=400",
-          productUrl: "https://example.com/headphones",
-        },
-        {
-          productId: "2",
-          title: "Ergonomic Office Chair",
-          description: "Mesh back, adjustable height, lumbar support",
-          price: 299.99,
-          imageUrl: "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=400",
-          productUrl: "https://example.com/chair",
-        },
-      ];
-
-      // Mock research delay
-      const timer = setTimeout(() => {
-        if (currentProducts.length === 0) {
-          setCurrentProducts(mockProducts);
-          setAgentStatus("speaking");
-
-          setMessages((prev) => [
-            ...prev,
-            {
-              speaker: "agent",
-              text: "I found some great options for you! Here are my top recommendations.",
-              timestamp: Date.now(),
-            },
-          ]);
-
-          setTimeout(() => setAgentStatus("listening"), 2000);
-        }
-      }, 3000);
-
-      return () => clearTimeout(timer);
+    if (sessionItems && sessionItems.length > 0) {
+      const products: Product[] = sessionItems.map((item) => ({
+        productId: item.productId,
+        title: item.productName,
+        description: item.description || "",
+        price: item.price || 0,
+        imageUrl: item.imageUrl,
+        productUrl: item.productUrl || "",
+      }));
+      
+      setCurrentProducts(products);
     }
-  }, [isActive, sessionId, currentProducts.length]);
+  }, [sessionItems]);
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -333,6 +337,7 @@ export default function VoiceShopperPage() {
             {/* Conversation Display */}
             <VoiceAgentDisplay
               messages={messages}
+              interimTranscript={interimTranscript}
               agentStatus={agentStatus}
               className="min-h-[400px]"
             />

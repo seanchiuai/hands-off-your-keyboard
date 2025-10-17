@@ -54,8 +54,16 @@ export function ProductCarousel({
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Search Failed</AlertTitle>
-        <AlertDescription>
-          There was an error searching for products. Please try again later.
+        <AlertDescription className="space-y-2">
+          <p>We couldn&apos;t complete your search. This might be due to:</p>
+          <ul className="list-disc list-inside text-sm space-y-1 ml-2">
+            <li>Network connectivity issues</li>
+            <li>API service temporarily unavailable</li>
+            <li>Invalid search parameters</li>
+          </ul>
+          <p className="mt-3 text-sm font-medium">
+            💡 Try: Create a new search with simpler terms, or check your internet connection.
+          </p>
         </AlertDescription>
       </Alert>
     );
@@ -81,23 +89,58 @@ export function ProductCarousel({
       <Alert>
         <Search className="h-4 w-4" />
         <AlertTitle>No Products Found</AlertTitle>
-        <AlertDescription>
-          No products found matching your criteria. Try adjusting your filters or search again.
+        <AlertDescription className="space-y-2">
+          <p>We couldn&apos;t find any products matching your search.</p>
+          <p className="text-sm font-medium mt-3">
+            💡 Try these tips:
+          </p>
+          <ul className="list-disc list-inside text-sm space-y-1 ml-2">
+            <li>Use more general search terms (e.g., &quot;laptop&quot; instead of &quot;Dell XPS 15 2024 model&quot;)</li>
+            <li>Remove or adjust price filters if you set any</li>
+            <li>Check for spelling errors</li>
+            <li>Try searching for a similar product category</li>
+          </ul>
         </AlertDescription>
       </Alert>
     );
   }
 
+  // Determine if we're using mock data or real API
+  const isMockData = products.length > 0 && products.every((p) => p.source === "mock");
+  const dataSource = isMockData ? "mock" : products.length > 0 && products.some((p) => p.source === "serpapi") ? "serpapi" : "unknown";
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">
-          {products.length} Product{products.length !== 1 ? "s" : ""} Found
-        </h2>
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold">
+            {products.length} Product{products.length !== 1 ? "s" : ""} Found
+          </h2>
+          {dataSource === "mock" && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+              ⚠️ Demo Data
+            </span>
+          )}
+          {dataSource === "serpapi" && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+              ✓ Real Data
+            </span>
+          )}
+        </div>
         <p className="text-sm text-muted-foreground">
           For: <strong>{query.searchText}</strong>
         </p>
       </div>
+
+      {dataSource === "mock" && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Demo Mode</AlertTitle>
+          <AlertDescription>
+            You&apos;re seeing sample products. Add your <strong>SERPAPI_KEY</strong> to environment variables to search real products from Google Shopping.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {products.map((product) => (
