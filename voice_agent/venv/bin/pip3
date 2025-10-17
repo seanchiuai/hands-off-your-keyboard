@@ -1,4 +1,4 @@
-#!/Users/seanchiu/Desktop/hands-off-your-keyboard/pipecat/venv/bin/python3
+#!/Users/seanchiu/Desktop/hands-off-your-keyboard/voice_agent/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
