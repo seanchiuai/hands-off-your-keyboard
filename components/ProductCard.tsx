@@ -53,14 +53,14 @@ export function ProductCard({ product, onSave }: ProductCardProps) {
   };
 
   return (
-    <Card className="product-card w-full h-full flex flex-col">
+    <Card className="product-card w-full h-full flex flex-col card-enter hover-lift transition-all-smooth">
       {/* Wishlist Heart */}
       <button
         onClick={handleWishlistToggle}
-        className={`wishlist-heart ${isWishlisted ? 'active' : ''} ${isAnimating ? 'wishlist-heart-animation' : ''}`}
+        className={`wishlist-heart ${isWishlisted ? 'active' : ''} ${isAnimating ? 'wishlist-heart-animation animate-success-pop' : ''} button-press`}
         aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
       >
-        <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
+        <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''} transition-all-smooth`} />
       </button>
 
       <CardHeader className="pb-3">
@@ -86,12 +86,12 @@ export function ProductCard({ product, onSave }: ProductCardProps) {
 
       <CardContent className="flex-1 space-y-3">
         {product.imageUrl ? (
-          <div className="relative w-full h-48 bg-muted rounded-md overflow-hidden">
+          <div className="relative w-full h-48 bg-muted rounded-md overflow-hidden group/image">
             <Image
               src={product.imageUrl}
               alt={product.title}
               fill
-              className="object-cover"
+              className="object-cover group-hover/image:scale-110 transition-transform duration-500 ease-out"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               onError={(e) => {
                 // Fallback if image fails to load
@@ -99,10 +99,11 @@ export function ProductCard({ product, onSave }: ProductCardProps) {
                 target.style.display = "none";
               }}
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300" />
           </div>
         ) : (
           <div className="w-full h-48 bg-muted rounded-md flex items-center justify-center">
-            <Package className="h-16 w-16 text-muted-foreground" />
+            <Package className="h-16 w-16 text-muted-foreground animate-float" />
           </div>
         )}
 
@@ -118,14 +119,14 @@ export function ProductCard({ product, onSave }: ProductCardProps) {
       <CardFooter className="flex gap-2">
         <Button 
           variant="outline" 
-          className="flex-1 interactive-button enhanced-focus" 
+          className="flex-1 interactive-button enhanced-focus button-press hover-lift transition-all-smooth" 
           onClick={handleAddToCart}
           disabled={!product.availability}
         >
-          <ShoppingCart className="mr-2 h-4 w-4" />
+          <ShoppingCart className={`mr-2 h-4 w-4 ${isInCart ? 'animate-wiggle' : ''}`} />
           {isInCart ? "In Cart" : "Add to Cart"}
         </Button>
-        <Button variant="default" className="interactive-button enhanced-focus" asChild>
+        <Button variant="default" className="interactive-button enhanced-focus button-press hover-lift transition-all-smooth" asChild>
           <a href={product.productUrl} target="_blank" rel="noopener noreferrer">
             View
             <ExternalLink className="ml-2 h-4 w-4" />
@@ -134,7 +135,7 @@ export function ProductCard({ product, onSave }: ProductCardProps) {
         {onSave && (
           <Button 
             variant="outline" 
-            className="interactive-button enhanced-focus" 
+            className="interactive-button enhanced-focus button-press hover-scale transition-all-smooth" 
             onClick={() => onSave(product._id)}
           >
             Save

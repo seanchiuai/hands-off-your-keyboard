@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { IconCirclePlusFilled, type Icon } from "@tabler/icons-react"
+import { type Icon } from "@tabler/icons-react"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -25,21 +25,7 @@ export function NavMain({
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
-        <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-2">
-            <SidebarMenuButton
-              tooltip="Add Task"
-              className="gradient-primary text-white glow-hover transition-smooth font-medium"
-              onClick={() => {
-                const evt = new CustomEvent("open-quick-add-task")
-                window.dispatchEvent(evt)
-              }}
-            >
-              <IconCirclePlusFilled className="w-5 h-5" />
-              <span>Add Task</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {/* Quick add task removed for minimal UI */}
         <SidebarMenu>
           {items.map((item) => {
             const isActive = pathname === item.url || pathname?.startsWith(item.url + "/")

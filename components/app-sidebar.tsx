@@ -4,7 +4,6 @@ import * as React from "react"
 import {
   IconHelp,
   IconInnerShadowTop,
-  IconListDetails,
   IconMicrophone,
   IconSettings,
 } from "@tabler/icons-react"
@@ -25,14 +24,19 @@ import {
 const data = {
   navMain: [
     {
-      title: "Tasks",
-      url: "/tasks",
-      icon: IconListDetails,
+      title: "Home",
+      url: "/",
+      icon: IconMicrophone,
     },
     {
-      title: "Voice Shopper",
-      url: "/voice-shopper",
-      icon: IconMicrophone,
+      title: "History",
+      url: "/history",
+      icon: IconInnerShadowTop,
+    },
+    {
+      title: "Settings",
+      url: "/settings",
+      icon: IconSettings,
     },
   ],
   navSecondary: [
@@ -59,11 +63,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5 transition-smooth"
             >
-              <a href="/tasks" className="flex items-center gap-3">
+              <a href="/" className="flex items-center gap-3">
                 <div className="gradient-primary p-2 rounded-lg shadow-lg glow-primary">
                   <IconInnerShadowTop className="!size-5 text-black/70" />
                 </div>
-                <span className="text-xl font-bold text-gradient-primary">VIBED</span>
+                <span className="text-xl font-bold text-gradient-primary">Hands Off Your Keyboard</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>

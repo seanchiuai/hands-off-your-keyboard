@@ -4,6 +4,7 @@ import "./globals.css";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { ClerkProvider } from "@clerk/nextjs";
 import ClientBody from "@/components/ClientBody";
+import AppShell from "@/components/AppShell";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -11,8 +12,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "VIBED",
-  description: "Welcome to VIBED",
+  title: "Hands Off Your Keyboard",
+  description: "Hands Off Your Keyboard — voice-first shopping and research assistant",
   icons: {
     icon: "/convex.svg",
   },
@@ -54,7 +55,9 @@ export default function RootLayout({
               }
             }}
           >
-            <ConvexClientProvider>{children}</ConvexClientProvider>
+            <ConvexClientProvider>
+              <AppShell>{children}</AppShell>
+            </ConvexClientProvider>
           </ClerkProvider>
         </ClientBody>
       </body>
