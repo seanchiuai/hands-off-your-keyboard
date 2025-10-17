@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Star, Package } from "lucide-react";
+import { ExternalLink, Star, Package, Heart, ShoppingCart } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
 
 interface ProductCardProps {
   product: {
@@ -25,6 +27,10 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onSave }: ProductCardProps) {
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isInCart, setIsInCart] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -32,11 +38,34 @@ export function ProductCard({ product, onSave }: ProductCardProps) {
     }).format(price);
   };
 
+  const handleWishlistToggle = () => {
+    setIsWishlisted(!isWishlisted);
+    setIsAnimating(true);
+    toast.success(isWishlisted ? "Removed from wishlist" : "Added to wishlist");
+    setTimeout(() => setIsAnimating(false), 300);
+  };
+
+  const handleAddToCart = () => {
+    setIsInCart(true);
+    setIsAnimating(true);
+    toast.success("Added to cart!");
+    setTimeout(() => setIsAnimating(false), 300);
+  };
+
   return (
-    <Card className="w-full h-full flex flex-col hover:shadow-lg transition-shadow">
+    <Card className="product-card w-full h-full flex flex-col">
+      {/* Wishlist Heart */}
+      <button
+        onClick={handleWishlistToggle}
+        className={`wishlist-heart ${isWishlisted ? 'active' : ''} ${isAnimating ? 'wishlist-heart-animation' : ''}`}
+        aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+      >
+        <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
+      </button>
+
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start gap-2">
-          <CardTitle className="text-lg line-clamp-2">{product.title}</CardTitle>
+          <CardTitle className="text-shopping-title line-clamp-2">{product.title}</CardTitle>
           <Badge variant={product.availability ? "default" : "secondary"} className="shrink-0">
             {product.availability ? "In Stock" : "Out of Stock"}
           </Badge>
@@ -78,23 +107,36 @@ export function ProductCard({ product, onSave }: ProductCardProps) {
         )}
 
         {product.description && (
-          <p className="text-sm text-muted-foreground line-clamp-3">{product.description}</p>
+          <p className="text-shopping-description line-clamp-3">{product.description}</p>
         )}
 
         <div className="pt-2">
-          <p className="text-2xl font-bold">{formatPrice(product.price, product.currency)}</p>
+          <p className="text-shopping-price">{formatPrice(product.price, product.currency)}</p>
         </div>
       </CardContent>
 
       <CardFooter className="flex gap-2">
-        <Button variant="default" className="flex-1" asChild>
+        <Button 
+          variant="outline" 
+          className="flex-1 interactive-button enhanced-focus" 
+          onClick={handleAddToCart}
+          disabled={!product.availability}
+        >
+          <ShoppingCart className="mr-2 h-4 w-4" />
+          {isInCart ? "In Cart" : "Add to Cart"}
+        </Button>
+        <Button variant="default" className="interactive-button enhanced-focus" asChild>
           <a href={product.productUrl} target="_blank" rel="noopener noreferrer">
-            View Product
+            View
             <ExternalLink className="ml-2 h-4 w-4" />
           </a>
         </Button>
         {onSave && (
-          <Button variant="outline" onClick={() => onSave(product._id)}>
+          <Button 
+            variant="outline" 
+            className="interactive-button enhanced-focus" 
+            onClick={() => onSave(product._id)}
+          >
             Save
           </Button>
         )}

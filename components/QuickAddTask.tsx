@@ -34,8 +34,14 @@ export function QuickAddTask() {
       }
     };
 
+    const handleOpenEvent = () => setOpen(true);
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("open-quick-add-task", handleOpenEvent as EventListener);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("open-quick-add-task", handleOpenEvent as EventListener);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,10 +69,10 @@ export function QuickAddTask() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="default" size="sm" className="gap-2">
+        <Button variant="default" size="sm" className="gap-2 gradient-primary hover-lift glow-hover transition-smooth shadow-lg shadow-primary/30 spring-button">
           <IconPlus className="h-4 w-4" />
-          <span className="hidden sm:inline">Add Task</span>
-          <kbd className="hidden lg:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+          <span className="hidden sm:inline font-medium">Add Task</span>
+          <kbd className="hidden lg:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] font-medium">
             <span className="text-xs">⌘</span>K
           </kbd>
         </Button>
@@ -140,7 +146,7 @@ export function QuickAddTask() {
             >
               Cancel
             </Button>
-            <Button type="submit">Create Task</Button>
+            <Button type="submit" className="spring-button">Create Task</Button>
           </div>
         </form>
       </DialogContent>

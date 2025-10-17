@@ -207,12 +207,12 @@ export default function VoiceShopperPage() {
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <div className="px-4 lg:px-6">
-        <div className="space-y-8">
+        <div className="space-y-10">
           {/* Header */}
-          <div className="text-center space-y-2">
-            <h1 className="text-4xl font-bold tracking-tight">Voice Shopper</h1>
-            <p className="text-muted-foreground text-lg">
-              Talk to your AI shopping assistant to find the perfect products
+          <div className="text-center space-y-4">
+            <h1 className="text-5xl font-bold tracking-tight text-gradient-primary">Voice Shopper</h1>
+            <p className="text-muted-foreground/90 text-xl max-w-2xl mx-auto">
+              Talk to your AI shopping assistant to find the perfect products ✨
             </p>
           </div>
 
@@ -221,14 +221,14 @@ export default function VoiceShopperPage() {
           {/* Left Column: Voice Controls & Conversation */}
           <div className="space-y-6">
             {/* Voice Control */}
-            <Card>
+            <Card className="card-elevated rounded-xl">
               <CardHeader>
-                <CardTitle>Voice Control</CardTitle>
-                <CardDescription>
-                  Click the microphone to start or stop the voice session
+                <CardTitle className="text-xl font-bold text-foreground">Voice Control</CardTitle>
+                <CardDescription className="text-base text-muted-foreground">
+                  Click the microphone to start or stop the voice session 🎤
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex justify-center py-8">
+              <CardContent className="flex justify-center py-10">
                 <VoiceInputButton
                   onSessionStart={handleSessionStart}
                   onSessionEnd={handleSessionEnd}
@@ -255,11 +255,11 @@ export default function VoiceShopperPage() {
               </TabsList>
 
               <TabsContent value="current" className="space-y-4">
-                <Card>
+                <Card className="card-elevated rounded-xl">
                   <CardHeader>
-                    <CardTitle>Product Results</CardTitle>
-                    <CardDescription>
-                      Products from your current voice search
+                    <CardTitle className="text-xl font-bold text-foreground">Product Results</CardTitle>
+                    <CardDescription className="text-base text-muted-foreground">
+                      Products from your current voice search 🛍️
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -285,10 +285,18 @@ export default function VoiceShopperPage() {
                         ))}
                       </div>
                     ) : (
-                      <div className="py-12 text-center">
-                        <p className="text-muted-foreground">
-                          Start a voice session and tell me what you&apos;re looking for!
-                        </p>
+                      <div className="py-12 text-center space-y-4">
+                        <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
+                          <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-foreground mb-2">No products yet</h3>
+                          <p className="text-muted-foreground">
+                            Start a voice session and tell me what you&apos;re looking for!
+                          </p>
+                        </div>
                       </div>
                     )}
                   </CardContent>
@@ -296,11 +304,11 @@ export default function VoiceShopperPage() {
               </TabsContent>
 
               <TabsContent value="saved" className="space-y-4">
-                <Card>
+                <Card className="card-elevated rounded-xl">
                   <CardHeader>
-                    <CardTitle>Saved Items</CardTitle>
-                    <CardDescription>
-                      Your saved products from all sessions
+                    <CardTitle className="text-xl font-bold text-foreground">Saved Items</CardTitle>
+                    <CardDescription className="text-base text-muted-foreground">
+                      Your saved products from all sessions 💾
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -309,7 +317,7 @@ export default function VoiceShopperPage() {
                         {shoppingHistory.map((item) => (
                           <div
                             key={item._id}
-                            className="flex items-center gap-4 p-4 border rounded-lg"
+                            className="flex items-center gap-4 p-4 border rounded-lg card-product price-highlight"
                           >
                             <div className="flex-1">
                               <h3 className="font-semibold">{item.productName}</h3>
@@ -328,10 +336,18 @@ export default function VoiceShopperPage() {
                         ))}
                       </div>
                     ) : (
-                      <div className="py-12 text-center">
-                        <p className="text-muted-foreground">
-                          No saved items yet. Save products during a voice session!
-                        </p>
+                      <div className="py-12 text-center space-y-4">
+                        <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
+                          <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-foreground mb-2">No saved items</h3>
+                          <p className="text-muted-foreground">
+                            Save products during a voice session to see them here!
+                          </p>
+                        </div>
                       </div>
                     )}
                   </CardContent>

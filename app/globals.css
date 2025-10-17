@@ -5,40 +5,62 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Dark mode - black and dark grey tones */
-  --background: #000000;
+  /* Vibrant & Bold Dark Theme */
+  --background: #0a0a0f;
   --foreground: #ffffff;
-  --card: #1a1a1a;
-  --card-foreground: #fafafa;
-  --popover: #1a1a1a;
-  --popover-foreground: #fafafa;
-  --primary: #fafafa;
-  --primary-foreground: #1a1a1a;
-  --secondary: #2a2a2a;
-  --secondary-foreground: #fafafa;
-  --muted: #2a2a2a;
-  --muted-foreground: #b3b3b3;
-  --accent: #3a3a3a;
-  --accent-foreground: #fafafa;
-  --destructive: #dc2626;
-  --destructive-foreground: #fafafa;
-  --border: #3a3a3a;
-  --input: #3a3a3a;
-  --ring: #d4d4d8;
-  --radius: 0.625rem;
+  --card: #16161f;
+  --card-foreground: #ffffff;
+  --popover: #1a1a28;
+  --popover-foreground: #ffffff;
+
+  /* Warmer, shopping-friendly primary */
+  --primary: #0ea5e9; /* sky-500 - warmer blue */
+  --primary-foreground: #ffffff;
+  --primary-glow: rgba(14, 165, 233, 0.25);
+
+  /* Bold secondary colors */
+  --secondary: #1e1e2e;
+  --secondary-foreground: #ffffff;
+  --muted: #27273a;
+  --muted-foreground: #a1a1b5;
+  --accent: #10b981; /* emerald-500 - trust color */
+  --accent-foreground: #ffffff;
+
+  /* Shopping-friendly feedback colors */
+  --destructive: #ef4444; /* red-500 */
+  --destructive-foreground: #ffffff;
+  --success: #22c55e; /* green-500 */
+  --success-foreground: #ffffff;
+  --warning: #f59e0b; /* amber-500 */
+  --warning-foreground: #000000;
+
+  /* Borders and inputs with more contrast */
+  --border: #232a33;
+  --input: #151a22;
+  --ring: #0ea5e9;
+  --radius: 1rem;
+
+  /* Vibrant chart colors */
   --chart-1: #8b5cf6;
   --chart-2: #06b6d4;
   --chart-3: #10b981;
   --chart-4: #f59e0b;
-  --chart-5: #ef4444;
-  --sidebar: #1a1a1a;
-  --sidebar-foreground: #fafafa;
+  --chart-5: #f43f5e;
+
+  /* Bold sidebar */
+  --sidebar: #13131a;
+  --sidebar-foreground: #ffffff;
   --sidebar-primary: #8b5cf6;
-  --sidebar-primary-foreground: #fafafa;
-  --sidebar-accent: #2a2a2a;
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #3a3a3a;
-  --sidebar-ring: #d4d4d8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e1e2e;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #2d2d44;
+  --sidebar-ring: #8b5cf6;
+
+  /* Gradient stops for warmer blue */
+  --gradient-start: #0ea5e9; /* sky-500 */
+  --gradient-middle: #0284c7; /* sky-600 */
+  --gradient-end: #0369a1; /* sky-700 */
 }
 
 @theme inline {
@@ -105,5 +127,348 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Neutral/cyan gradients */
+  .gradient-primary {
+    background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+  }
+  .text-gradient-primary {
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .gradient-card {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(109, 40, 217, 0.04) 100%);
+  }
+
+  /* Simplified card styles */
+  .card-simple {
+    background: rgba(22, 22, 31, 0.6);
+    border: 1px solid rgba(45, 45, 68, 0.6);
+  }
+
+  .card-elevated {
+    background: rgba(22, 22, 31, 0.8);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Glow effects for primary CTAs only */
+  .glow-primary {
+    box-shadow: 0 4px 16px var(--primary-glow);
+  }
+
+  .glow-hover {
+    transition: box-shadow 0.3s ease;
+  }
+
+  .glow-hover:hover {
+    box-shadow: 0 6px 24px var(--primary-glow);
+  }
+
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .transition-bounce {
+    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  /* Subtle hover effects */
+  .hover-lift {
+    transition: transform 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  .hover-scale {
+    transition: transform 0.2s ease;
+  }
+
+  .hover-scale:hover {
+    transform: scale(1.02);
+  }
+
+  /* Animated gradient border */
+  .border-gradient {
+    position: relative;
+    border: 2px solid transparent;
+    background: linear-gradient(var(--card), var(--card)) padding-box,
+                linear-gradient(135deg, var(--gradient-start), var(--gradient-end)) border-box;
+    border-radius: var(--radius);
+  }
+
+  /* Glass morphism effect */
+  .glass {
+    background: rgba(22, 22, 31, 0.55);
+    backdrop-filter: blur(16px) saturate(120%);
+    border: 1px solid rgba(14, 165, 233, 0.18);
+  }
+
+  /* Shopping-specific utilities */
+  .card-product {
+    background: rgba(22, 22, 31, 0.7);
+    border: 1px solid rgba(45, 45, 68, 0.5);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-product:hover {
+    background: rgba(22, 22, 31, 0.85);
+    border-color: rgba(14, 165, 233, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Spring animations for shopping interactions */
+  .spring-button {
+    transition: transform 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .spring-button:active {
+    transform: scale(0.95);
+  }
+
+  /* Price highlighting */
+  .price-highlight {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.05));
+    border: 1px solid rgba(34, 197, 94, 0.2);
+  }
+
+  /* Accessibility improvements */
+  @media (prefers-reduced-motion: reduce) {
+    .transition-smooth,
+    .transition-bounce,
+    .hover-lift,
+    .hover-scale,
+    .spring-button,
+    .card-product {
+      transition: none !important;
+      animation: none !important;
+    }
+    
+    .card-product:hover {
+      transform: none !important;
+    }
+  }
+
+  /* Focus improvements */
+  .focus-ring {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .gradient-primary {
+      background: var(--primary) !important;
+    }
+    
+    .text-gradient-primary {
+      color: var(--primary) !important;
+      background: none !important;
+      -webkit-background-clip: unset !important;
+      background-clip: unset !important;
+    }
+  }
+
+  /* Advanced shopping UX */
+  .product-card {
+    position: relative;
+    background: rgba(22, 22, 31, 0.8);
+    border: 1px solid rgba(45, 45, 68, 0.6);
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .product-card:hover {
+    border-color: rgba(14, 165, 233, 0.4);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transform: translateY(-4px);
+  }
+
+  .product-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .product-card:hover::before {
+    opacity: 1;
+  }
+
+  /* Shopping icons and badges */
+  .cart-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--destructive);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    animation: pulse 2s infinite;
+  }
+
+  .wishlist-heart {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    opacity: 0;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .product-card:hover .wishlist-heart {
+    opacity: 1;
+  }
+
+  .wishlist-heart.active {
+    color: var(--destructive);
+    background: rgba(239, 68, 68, 0.2);
+  }
+
+  /* Skeleton loading states */
+  .skeleton {
+    background: linear-gradient(90deg, 
+      rgba(45, 45, 68, 0.3) 25%, 
+      rgba(45, 45, 68, 0.5) 50%, 
+      rgba(45, 45, 68, 0.3) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 0.5rem;
+  }
+
+  @keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .skeleton-text {
+    height: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .skeleton-text.short { width: 60%; }
+  .skeleton-text.medium { width: 80%; }
+  .skeleton-text.long { width: 100%; }
+
+  .skeleton-image {
+    height: 200px;
+    width: 100%;
+  }
+
+  /* Enhanced micro-interactions */
+  .interactive-button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .interactive-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  .interactive-button:active::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  /* Enhanced focus states */
+  .enhanced-focus:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+  }
+
+  /* Shopping-specific animations */
+  @keyframes add-to-cart {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes wishlist-heart {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+
+  .add-to-cart-animation {
+    animation: add-to-cart 0.3s ease;
+  }
+
+  .wishlist-heart-animation {
+    animation: wishlist-heart 0.3s ease;
+  }
+
+  /* Enhanced typography */
+  .text-shopping-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.025em;
+  }
+
+  .text-shopping-price {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--success);
+  }
+
+  .text-shopping-description {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--muted-foreground);
+  }
+
+  /* Animated background */
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .animate-gradient {
+    background: linear-gradient(270deg, var(--gradient-start), var(--gradient-middle), var(--gradient-end));
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
   }
 }

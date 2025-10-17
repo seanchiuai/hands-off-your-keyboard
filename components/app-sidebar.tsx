@@ -57,11 +57,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
+              className="data-[slot=sidebar-menu-button]:!p-1.5 transition-smooth"
             >
-              <a href="/tasks">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">VIBED</span>
+              <a href="/tasks" className="flex items-center gap-3">
+                <div className="gradient-primary p-2 rounded-lg shadow-lg glow-primary">
+                  <IconInnerShadowTop className="!size-5 text-black/70" />
+                </div>
+                <span className="text-xl font-bold text-gradient-primary">VIBED</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
