@@ -16,3 +16,41 @@ HANDS OFF YOUR KEYBOARD! is a voice-first shopping website where you talk to an 
 
 4. UI Design Style
 Modern, clean, intuitive UI without being flashy.
+
+5. UI Structure
+The app features a simplified, voice-first interface with 4 main pages and a persistent sidebar:
+
+**Navigation:**
+- Persistent sidebar on the left for all pages
+- Simple navigation between pages
+- Clean, minimal design
+
+**Pages:**
+1. **Main Dashboard** (`/`)
+   - Primary interaction point for voice shopping
+   - Large microphone button for voice interaction
+   - Product display area showing search results
+   - Save button for each product
+   - No text input - purely voice-driven
+
+2. **History** (`/history`)
+   - View past conversations with AI
+   - Manage AI's memory of user preferences
+   - Edit or reset learned preferences
+   - Review interaction history
+
+3. **Saved Products** (`/saved`)
+   - Collection of all saved products
+   - Product cards with images, names, and links
+   - Option to remove saved items
+
+4. **Settings** (`/settings`)
+   - User account information
+   - Logout functionality
+   - App configuration options
+
+**Design Principles:**
+- Voice-first: Microphone interaction as the primary input method
+- Minimal UI: Clean, uncluttered interface focused on essential features
+- Clear hierarchy: Easy navigation between the 4 main pages
+- Consistent layout: Sidebar always present for quick access
