@@ -1,174 +1,208 @@
-# Background Research Feature - Implementation Summary
+# Background Research Feature - Complete Implementation Guide
 
 ## Overview
 
-The Background Research feature has been successfully implemented. This feature enables users to search for products across multiple retailers using Bright Data's web scraping API, with real-time updates and filtering capabilities.
+The Background Research feature enables users to search for products across multiple retailers using Bright Data's web scraping API, with real-time updates and filtering capabilities.
 
-## Files Created/Modified
+**Tech Stack**: Next.js, Convex, Bright Data Web Scraper API
 
-### Backend (Convex)
+**Core Functionality**:
+- Search for products across multiple retailers
+- Apply filters (price range, rating, availability)
+- View real-time results as they are collected
+- Track search history and status
 
-#### 1. Schema Updates
-**File**: `/convex/schema.ts`
+---
+
+## Implementation Plan
+
+### 1. Manual Setup (User Required)
+- [ ] Create Bright Data account
+- [ ] Configure Bright Data Web Scraper API for target e-commerce sites (e.g., Amazon products)
+- [ ] Generate Bright Data API key
+- [ ] Create Convex account and project
+- [ ] Configure Convex deployment settings via dashboard or CLI
+
+### 2. Dependencies & Environment
+- [ ] Install: `convex`, `react`, `react-dom`, `next`, `typescript`, `@types/react`, `@types/node`, `@bright-data/scraper-sdk` (or similar HTTP client for API calls)
+- [ ] Env vars: `BRIGHT_DATA_API_KEY`, `BRIGHT_DATA_COLLECTOR_ID`, `BRIGHT_DATA_ZONE`, `CONVEX_DEPLOYMENT_URL`
+
+### 3. Database Schema
+- [ ] Structure: `products` table with fields:
+    - `_id: Id<'products'>`
+    - `queryId: Id<'queries'>` (link to the original search query)
+    - `title: string`
+    - `imageUrl: string`
+    - `productUrl: string`
+    - `price: number`
+    - `currency: string`
+    - `description: string`
+    - `reviewsCount: number`
+    - `availability: boolean`
+    - `source: string` (e.g., "Amazon", "Walmart")
+    - `searchRank: number` (initial rank from Bright Data)
+    - `systemRank: number` (rank after internal filtering/re-ranking)
+    - `createdAt: number`
+- [ ] Structure: `queries` table with fields:
+    - `_id: Id<'queries'>`
+    - `userId: Id<'users'>`
+    - `searchText: string` (the spoken query from the user)
+    - `status: "pending" | "searching" | "completed" | "failed"`
+    - `preferences: object` (user's saved shopping preferences)
+    - `createdAt: number`
+    - `updatedAt: number`
+
+### 4. Backend Functions
+- [ ] `api/products.ts`:
+    - `query: getProductsForQuery(queryId: Id<'queries'>)`: Fetches product results for a given query, ordered by `systemRank`
+    - `mutation: saveProductToList(userId: Id<'users'>, productId: Id<'products'>)`: Saves a product to a user's personal list
+- [ ] `api/queries.ts`:
+    - `mutation: createSearchQuery(userId: Id<'users'>, searchText: string, preferences: object)`: Creates a new search query record and schedules the initial Bright Data action
+    - `query: getQueryStatus(queryId: Id<'queries'>)`: Fetches the status of a search query
+- [ ] `convex/actions/brightdata.ts` (internal action):
+    - `internalAction: initiateProductSearch(queryId: Id<'queries'>, searchText: string, preferences: object)`:
+        - Calls Bright Data Web Scraper API with `searchText` and `preferences`
+        - Processes results (filters, re-ranks, deduplicates)
+        - Calls `internalMutation: storeProductResults` to persist products
+        - Schedules itself to run again if continuous searching is required or if new relevant criteria emerge
+- [ ] `convex/mutations/brightdata.ts` (internal mutation):
+    - `internalMutation: storeProductResults(queryId: Id<'queries'>, products: Product[])`: Stores fetched and processed products into the `products` table. Updates `queries` table status
+
+### 5. Frontend
+- [ ] Components:
+    - `ProductCarousel`: Displays products from the `products` table, subscribed via `useQuery`
+    - `SearchInput`: Captures user's voice input (from AI agent) and triggers `createSearchQuery` mutation
+    - `ProductCard`: Individual product display with image, title, price, summary, and "Save to List" button
+- [ ] State:
+    - Global state (e.g., Zustand, React Context) for current `queryId`
+    - Local component state for UI interactions (e.g., loading spinners, error messages)
+    - `useQuery` hooks from Convex for real-time `products` and `query` status
+
+### 6. Error Prevention
+- [ ] API errors: Implement `try/catch` blocks in Convex actions for Bright Data API calls. Implement exponential backoff/retries for transient Bright Data errors within the action
+- [ ] Validation: Use `v.string()`, `v.number()`, etc., for all Convex function arguments and return values. Validate Bright Data response structure before processing
+- [ ] Rate limiting: Monitor Bright Data usage via their dashboard. Implement intelligent scheduling in Convex actions to manage Bright Data costs (e.g., fetch fewer results initially, increase frequency only for active queries)
+- [ ] Auth: Secure `createSearchQuery` mutation with `ctx.auth.getUserIdentity()`. Ensure `BRIGHT_DATA_API_KEY` is stored securely as an environment variable and never exposed client-side
+- [ ] Type safety: Leverage Convex's end-to-end type safety from database schema to frontend
+- [ ] Boundaries: Keep Convex actions focused solely on external API calls and minimal processing, delegating database writes to mutations
+
+---
+
+## Implementation Details
+
+### Files Created/Modified
+
+#### Backend (Convex)
+
+**1. Schema Updates**
+- **File**: `/convex/schema.ts`
 - **Modified**: Added `queries` and `products` tables
-- **Tables**:
-  - `queries`: Stores user search queries with status tracking
-  - `products`: Stores scraped product results with ranking
+- **Key Indexes**:
+  - `queries.by_user`: For fetching user's queries
+  - `queries.by_user_and_status`: For filtering queries by status
+  - `products.by_query`: For fetching all products for a query
+  - `products.by_query_and_rank`: For ordered product retrieval
+  - `products.by_url_and_query`: For deduplication
 
-**Key Indexes**:
-- `queries.by_user`: For fetching user's queries
-- `queries.by_user_and_status`: For filtering queries by status
-- `products.by_query`: For fetching all products for a query
-- `products.by_query_and_rank`: For ordered product retrieval
-- `products.by_url_and_query`: For deduplication
+**2. Query Management** (`/convex/queries.ts`)
+- `createSearchQuery`: Creates new search and schedules Bright Data action
+- `getQueryStatus`: Gets current status of a search query
+- `getUserQueries`: Retrieves user's search history
+- `updateQueryStatus`: Updates search status
+- `deleteQuery`: Deletes query and associated products
+- `getActiveQuery`: Gets most recent active query
 
-#### 2. Query Management
-**File**: `/convex/queries.ts` (NEW)
-- **Functions**:
-  - `createSearchQuery`: Creates new search and schedules Bright Data action
-  - `getQueryStatus`: Gets current status of a search query
-  - `getUserQueries`: Retrieves user's search history
-  - `updateQueryStatus`: Updates search status
-  - `deleteQuery`: Deletes query and associated products
-  - `getActiveQuery`: Gets most recent active query
+**3. Product Management** (`/convex/products.ts`)
+- `getProductsForQuery`: Gets all products for a query
+- `getFilteredProducts`: Gets products with price/rating/source filters
+- `getProduct`: Gets single product by ID
+- `storeProducts`: Internal mutation to store scraped products
+- `deleteProductsForQuery`: Deletes all products for a query
 
-#### 3. Product Management
-**File**: `/convex/products.ts` (NEW)
-- **Functions**:
-  - `getProductsForQuery`: Gets all products for a query
-  - `getFilteredProducts`: Gets products with price/rating/source filters
-  - `getProduct`: Gets single product by ID
-  - `storeProducts`: Internal mutation to store scraped products
-  - `deleteProductsForQuery`: Deletes all products for a query
-
-#### 4. Bright Data Integration
-**File**: `/convex/actions/brightdata.ts` (NEW)
+**4. Bright Data Integration** (`/convex/actions/brightdata.ts`)
 - **Type**: Node.js action (external API calls)
-- **Functions**:
-  - `initiateProductSearch`: Main action that calls Bright Data API
-  - `refreshProductSearch`: Re-runs search for continuous updates
+- `initiateProductSearch`: Main action that calls Bright Data API
+- `refreshProductSearch`: Re-runs search for continuous updates
 - **Features**:
   - Calls Bright Data Trigger API
   - Processes raw results into structured data
   - Handles errors and retries
   - Updates query status throughout lifecycle
 
-#### 5. Data Storage Mutations
-**File**: `/convex/mutations/brightdata.ts` (NEW)
-- **Functions**:
-  - `storeProductResults`: Stores/updates products in database
-  - `updateQueryStatus`: Updates query status (internal)
-  - `getQueryById`: Retrieves query for actions
-  - `reRankProducts`: Re-ranks products by various strategies
+**5. Data Storage Mutations** (`/convex/mutations/brightdata.ts`)
+- `storeProductResults`: Stores/updates products in database
+- `updateQueryStatus`: Updates query status (internal)
+- `getQueryById`: Retrieves query for actions
+- `reRankProducts`: Re-ranks products by various strategies
 
-### Frontend (Next.js + React)
+#### Frontend (Next.js + React)
 
-#### 1. Product Card Component
-**File**: `/components/ProductCard.tsx` (NEW)
-- **Purpose**: Displays individual product information
-- **Features**:
-  - Product image with fallback
-  - Price formatting with currency
-  - Rating and review count display
-  - Availability badge
-  - External link to product
-  - Optional save functionality
+**1. Product Card Component** (`/components/ProductCard.tsx`)
+- Product image with fallback
+- Price formatting with currency
+- Rating and review count display
+- Availability badge
+- External link to product
+- Optional save functionality
 
-#### 2. Product Carousel Component
-**File**: `/components/ProductCarousel.tsx` (NEW)
-- **Purpose**: Grid display of products with real-time updates
-- **Features**:
-  - Real-time subscription to product updates
-  - Loading states and skeletons
-  - Error handling
-  - Empty state messaging
-  - Responsive grid layout (1-4 columns)
+**2. Product Carousel Component** (`/components/ProductCarousel.tsx`)
+- Real-time subscription to product updates
+- Loading states and skeletons
+- Error handling
+- Empty state messaging
+- Responsive grid layout (1-4 columns)
 
-#### 3. Search Input Component
-**File**: `/components/SearchInput.tsx` (NEW)
-- **Purpose**: Form to create new product searches
-- **Features**:
-  - Search text input
-  - Price range filters (min/max)
-  - Minimum rating filter
-  - Form validation
-  - Loading states
-  - Toast notifications
+**3. Search Input Component** (`/components/SearchInput.tsx`)
+- Search text input
+- Price range filters (min/max)
+- Minimum rating filter
+- Form validation
+- Loading states
+- Toast notifications
 
-#### 4. Alert Component
-**File**: `/components/ui/alert.tsx` (NEW)
-- **Purpose**: Display alerts and notifications
-- **Variants**: Default and destructive
+**4. Alert Component** (`/components/ui/alert.tsx`)
+- Display alerts and notifications
+- Variants: Default and destructive
 
-#### 5. Research Page
-**File**: `/app/research/page.tsx` (NEW)
-- **Purpose**: Main interface for Background Research feature
-- **Features**:
-  - Tabbed interface (Search, Results, History)
-  - New search creation
-  - Real-time results display
-  - Search history with status
-  - Query selection from history
+**5. Research Page** (`/app/research/page.tsx`)
+- Tabbed interface (Search, Results, History)
+- New search creation
+- Real-time results display
+- Search history with status
+- Query selection from history
 
-### Configuration
+### Technical Highlights
 
-#### 1. Environment Variables
-**File**: `.env.example` (MODIFIED)
-- **Added**:
-  ```
-  BRIGHT_DATA_API_KEY=your_bright_data_api_key_here
-  BRIGHT_DATA_COLLECTOR_ID=your_collector_id_here
-  BRIGHT_DATA_ZONE=static
-  ```
-
-### Documentation
-
-#### 1. Setup Guide
-**File**: `BACKGROUND_RESEARCH_SETUP.md` (NEW)
-- Comprehensive setup instructions
-- Bright Data account configuration
-- Environment variable setup
-- API configuration options
-- Testing procedures
-- Troubleshooting guide
-- Cost optimization tips
-- Security considerations
-
-#### 2. Implementation Summary
-**File**: `BACKGROUND_RESEARCH_IMPLEMENTATION_SUMMARY.md` (NEW - this file)
-
-## Technical Highlights
-
-### Real-Time Updates
+**Real-Time Updates**
 - Uses Convex's reactive queries (`useQuery`) for real-time data sync
 - Products appear in UI as they're scraped and stored
 - Status updates propagate instantly to frontend
 
-### Error Handling
+**Error Handling**
 - Comprehensive try/catch blocks in actions
 - Query status tracking (pending → searching → completed/failed)
 - User-friendly error messages
 - Detailed logging for debugging
 
-### Authentication & Security
+**Authentication & Security**
 - All queries tied to authenticated users (Clerk)
 - Row-level security in database queries
 - API keys stored securely in environment variables
 - Never exposed client-side
 
-### Type Safety
+**Type Safety**
 - Full TypeScript coverage
 - Convex validators for all function arguments
 - Generated types for database schema
 - End-to-end type safety from DB to UI
 
-### Performance Optimization
+**Performance Optimization**
 - Indexed queries for fast retrieval
 - Pagination support (limit parameter)
 - Efficient deduplication (by URL + queryId)
 - Client-side filtering for instant UX
 
-## Data Flow
+### Data Flow
 
 1. **User initiates search**:
    - User enters search text in `SearchInput`
@@ -199,54 +233,288 @@ The Background Research feature has been successfully implemented. This feature 
    - New products appear automatically
    - Query status updates to "completed"
 
-## Manual Setup Required
+---
 
-### 1. Bright Data Account
-- [ ] Create Bright Data account
-- [ ] Configure Web Scraper API collector
-- [ ] Generate API key
-- [ ] Note Collector ID
+## Setup Guide
 
-### 2. Convex Environment Variables
-- [ ] Add `BRIGHT_DATA_API_KEY` to Convex dashboard
-- [ ] Add `BRIGHT_DATA_COLLECTOR_ID` to Convex dashboard
-- [ ] Add `BRIGHT_DATA_ZONE` to Convex dashboard (optional)
+### 1. Bright Data Account Setup
 
-### 3. Data Processor Customization
-- [ ] Update `processResults` function to match your Bright Data collector output format
-- [ ] Test with sample data
-- [ ] Adjust field mappings as needed
+**Create a Bright Data account**:
+1. Go to [https://brightdata.com](https://brightdata.com)
+2. Sign up for an account
+3. Navigate to the dashboard
 
-### 4. API Endpoint Configuration
-- [ ] Verify Bright Data Trigger API endpoint
-- [ ] OR configure webhook delivery (advanced)
-- [ ] OR implement polling mechanism (advanced)
+**Create a Data Collector**:
+1. Go to "Data Collector" section
+2. Click "Create Collector"
+3. Choose "E-commerce" category
+4. Select target websites (Amazon, Walmart, etc.)
+5. Configure the collector to extract:
+   - Product title
+   - Price
+   - Image URL
+   - Product URL
+   - Rating
+   - Review count
+   - Availability
+   - Description
+6. Note down the **Collector ID**
 
-## Testing Recommendations
+**Get API Credentials**:
+1. Go to "Account" > "API Tokens"
+2. Create a new API token
+3. Copy the **API Key**
 
-### Unit Tests
+**Configure Proxy Zone** (optional):
+1. Go to "Zones" section
+2. Create or use existing zone
+3. Note the zone name (default: "static")
+
+### 2. Environment Variables
+
+#### In Convex Dashboard:
+1. Go to your Convex dashboard: [https://dashboard.convex.dev](https://dashboard.convex.dev)
+2. Select your project
+3. Go to "Settings" > "Environment Variables"
+4. Add the following variables:
+
+```
+BRIGHT_DATA_API_KEY=your_api_key_here
+BRIGHT_DATA_COLLECTOR_ID=your_collector_id_here
+BRIGHT_DATA_ZONE=static
+```
+
+#### Local Development:
+Create or update `.env.local` (this file is gitignored):
+
+```bash
+# Bright Data Configuration
+BRIGHT_DATA_API_KEY=your_api_key_here
+BRIGHT_DATA_COLLECTOR_ID=your_collector_id_here
+BRIGHT_DATA_ZONE=static
+```
+
+### 3. Bright Data API Configuration
+
+The current implementation uses the Bright Data Trigger API. You may need to adjust the implementation based on your specific Bright Data setup:
+
+**Option 1: Trigger API (Current Implementation)**
+- Endpoint: `https://api.brightdata.com/dca/trigger`
+- Best for: On-demand searches
+- Cost: Pay per request
+
+**Option 2: Webhook Delivery**
+- Set up a webhook endpoint in your Convex HTTP actions
+- Configure Bright Data to push results to your endpoint
+- Best for: Real-time continuous updates
+
+**Option 3: Polling**
+- Trigger a collection job
+- Poll for results at intervals
+- Best for: Large batch collections
+
+### 4. Customizing the Data Processor
+
+The `processResults` function in `convex/actions/brightdata.ts` needs to be customized based on your Bright Data collector's output format:
+
+```typescript
+function processResults(brightDataResult: any) {
+  // Adjust field mappings based on your collector configuration
+  return brightDataResult.data.map((item: any, index: number) => ({
+    title: item.title || item.name,
+    imageUrl: item.image || item.imageUrl,
+    productUrl: item.url || item.productUrl,
+    price: parseFloat(item.price || 0),
+    currency: item.currency || "USD",
+    description: item.description,
+    reviewsCount: parseInt(item.reviews) || undefined,
+    rating: parseFloat(item.rating) || undefined,
+    availability: item.in_stock !== false,
+    source: item.retailer || "Unknown",
+    searchRank: index + 1,
+  }));
+}
+```
+
+---
+
+## Usage
+
+### Basic Search
+
+```typescript
+import { SearchInput } from "@/components/SearchInput";
+
+function MyPage() {
+  return <SearchInput onSearchCreated={(queryId) => console.log(queryId)} />;
+}
+```
+
+### Displaying Results
+
+```typescript
+import { ProductCarousel } from "@/components/ProductCarousel";
+
+function MyPage() {
+  const queryId = "..."; // From createSearchQuery
+
+  return (
+    <ProductCarousel
+      queryId={queryId}
+      onSaveProduct={(productId) => console.log("Save", productId)}
+    />
+  );
+}
+```
+
+### Filtering Results
+
+```typescript
+<ProductCarousel
+  queryId={queryId}
+  minPrice={50}
+  maxPrice={200}
+  minRating={4.0}
+  source="Amazon"
+  limit={20}
+/>
+```
+
+### Continuous Background Updates
+
+To enable continuous updates, use Convex's scheduler:
+
+```typescript
+// In your mutation or action
+await ctx.scheduler.runAfter(
+  1000 * 60 * 60, // 1 hour
+  internal.actions.brightdata.refreshProductSearch,
+  { queryId }
+);
+```
+
+### Custom Ranking
+
+Modify the `reRankProducts` mutation to implement custom ranking logic:
+
+```typescript
+await ctx.runMutation(internal.mutations.brightdata.reRankProducts, {
+  queryId,
+  rankingStrategy: "rating", // or "price_low_to_high", etc.
+});
+```
+
+### User-Specific Preferences
+
+Extend the schema to store user preferences and use them in searches:
+
+```typescript
+const userPrefs = await getUserPreferences(ctx, userId);
+const queryId = await createSearchQuery({
+  searchText: "laptop",
+  preferences: userPrefs,
+});
+```
+
+---
+
+## Testing
+
+### Testing the Implementation
+
+**1. Start the development server**:
+```bash
+npm run dev
+```
+
+**2. Navigate to the research page**:
+```
+http://localhost:3000/research
+```
+
+**3. Create a test search**:
+- Enter a product query (e.g., "wireless headphones")
+- Optionally set price filters
+- Click "Search"
+
+**4. Monitor the search**:
+- Check the Convex dashboard logs
+- Watch the status change from "pending" → "searching" → "completed"
+- Products should appear in real-time as they're collected
+
+**5. Check Bright Data dashboard**:
+- Verify the collection job was triggered
+- Review any errors or issues
+
+### Test Scenarios
+
+**Unit Tests**
 1. Test `processResults` with various input formats
 2. Test product filtering logic
 3. Test ranking algorithms
 
-### Integration Tests
+**Integration Tests**
 1. End-to-end search flow
 2. Error handling (invalid API key, network errors)
 3. Concurrent searches
 4. Query deletion
 
-### UI Tests
+**UI Tests**
 1. Search form validation
 2. Real-time updates
 3. Loading states
 4. Error states
 5. Empty states
 
-### Performance Tests
+**Performance Tests**
 1. Large result sets (100+ products)
 2. Multiple concurrent searches
 3. Query with many filters
 4. Database query performance
+
+---
+
+## Troubleshooting
+
+### "Bright Data API credentials not configured"
+- Ensure environment variables are set in Convex dashboard
+- Restart Convex dev server after adding variables
+
+### "Bright Data API failed: 401"
+- Check that your API key is correct
+- Verify the API key has necessary permissions
+
+### "No products found"
+- Check Bright Data dashboard for collection errors
+- Verify the collector is configured correctly
+- Check the `processResults` function matches your data format
+
+### Products not appearing in real-time
+- Check Convex logs for errors
+- Verify the `storeProductResults` mutation is being called
+- Ensure the frontend is using `useQuery` (not `useEffect` with manual fetching)
+
+---
+
+## Cost Optimization
+
+1. **Limit initial results**: Set reasonable limits on product count
+2. **Use caching**: Store results and only refresh when needed
+3. **Smart scheduling**: Don't refresh too frequently
+4. **Filter early**: Apply filters in Bright Data collector, not post-processing
+5. **Monitor usage**: Check Bright Data dashboard regularly
+
+---
+
+## Security Considerations
+
+1. **API Keys**: Never expose Bright Data API keys client-side
+2. **User Auth**: All queries are tied to authenticated users
+3. **Rate Limiting**: Implement rate limiting on search creation
+4. **Input Validation**: Sanitize search text before sending to Bright Data
+5. **HTTPS Only**: Always use HTTPS for API calls
+
+---
 
 ## Known Limitations
 
@@ -259,6 +527,8 @@ The Background Research feature has been successfully implemented. This feature 
 4. **Basic Ranking**: System ranking currently mirrors search ranking. Advanced ranking (by user preferences, ML, etc.) needs implementation.
 
 5. **No Price Tracking**: Products are not tracked over time for price changes.
+
+---
 
 ## Next Steps
 
@@ -317,6 +587,8 @@ The Background Research feature has been successfully implemented. This feature 
    - Push notifications
    - Barcode scanning
 
+---
+
 ## Blockers & Decisions Needed
 
 ### Critical Decisions
@@ -346,15 +618,20 @@ The Background Research feature has been successfully implemented. This feature 
 3. **Result Limits**: Maximum products per search?
    - Affects performance and costs
 
-## Support & Resources
+---
 
-- **Bright Data Docs**: https://docs.brightdata.com
-- **Convex Docs**: https://docs.convex.dev
-- **Implementation Plan**: `.claude/plans/feature_background_research.md`
-- **Agent Guidelines**: `.claude/agents/agent-background-research.md`
-- **Setup Guide**: `BACKGROUND_RESEARCH_SETUP.md`
+## Resources
 
-## Conclusion
+- **Bright Data Documentation**: [https://docs.brightdata.com](https://docs.brightdata.com)
+- **Bright Data Web Scraper API**: [https://docs.brightdata.com/docs/web-scraper-api](https://docs.brightdata.com/docs/web-scraper-api)
+- **Convex Actions**: [https://docs.convex.dev/functions/actions](https://docs.convex.dev/functions/actions)
+- **Convex Scheduling**: [https://docs.convex.dev/scheduling](https://docs.convex.dev/scheduling)
+
+---
+
+## Status
+
+✅ **Implementation Complete**
 
 The Background Research feature is fully implemented and ready for configuration and testing. All core functionality is in place:
 
