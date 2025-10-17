@@ -13,6 +13,7 @@ export default defineSchema({
     title: v.string(),
     description: v.optional(v.string()),
     status: v.union(v.literal("pending"), v.literal("completed")),
+    priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
     userId: v.string(),
     createdAt: v.number(),
     completedAt: v.optional(v.number()),

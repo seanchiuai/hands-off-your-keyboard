@@ -23,6 +23,7 @@ export const create = mutation({
   args: {
     title: v.string(),
     description: v.optional(v.string()),
+    priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -34,6 +35,7 @@ export const create = mutation({
       title: args.title,
       description: args.description,
       status: "pending",
+      priority: args.priority || "medium",
       userId: identity.tokenIdentifier,
       createdAt: Date.now(),
     });

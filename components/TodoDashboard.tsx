@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
@@ -21,6 +21,30 @@ export default function TodoDashboard() {
   const removeTodo = useMutation(api.todos.remove);
   const updateTodo = useMutation(api.todos.update);
 
+  // Keyboard shortcuts for tab navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only trigger if not typing in an input
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      if (e.key === "1") {
+        setActiveTab("all");
+      } else if (e.key === "2") {
+        setActiveTab("pending");
+      } else if (e.key === "3") {
+        setActiveTab("completed");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const handleCreateTodo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTodoTitle.trim()) return;
@@ -28,6 +52,7 @@ export default function TodoDashboard() {
     await createTodo({
       title: newTodoTitle.trim(),
       description: newTodoDescription.trim() || undefined,
+      priority: "medium",
     });
 
     setNewTodoTitle("");
@@ -120,49 +145,64 @@ export default function TodoDashboard() {
       <div className="flex gap-1 mb-6 border-b border-border">
         <button
           onClick={() => setActiveTab("all")}
-          className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+          className={`px-4 py-2 text-sm font-medium transition-colors relative group ${
             activeTab === "all"
               ? "text-foreground"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          All
+          <span className="flex items-center gap-2">
+            All
+            <kbd className="hidden sm:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+              1
+            </kbd>
+          </span>
           {activeTab === "all" && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
           )}
         </button>
         <button
           onClick={() => setActiveTab("pending")}
-          className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+          className={`px-4 py-2 text-sm font-medium transition-colors relative group ${
             activeTab === "pending"
               ? "text-foreground"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          Pending
-          {pendingCount > 0 && (
-            <span className="ml-2 px-1.5 py-0.5 text-xs bg-secondary rounded">
-              {pendingCount}
-            </span>
-          )}
+          <span className="flex items-center gap-2">
+            Pending
+            {pendingCount > 0 && (
+              <span className="px-1.5 py-0.5 text-xs bg-secondary rounded">
+                {pendingCount}
+              </span>
+            )}
+            <kbd className="hidden sm:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+              2
+            </kbd>
+          </span>
           {activeTab === "pending" && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
           )}
         </button>
         <button
           onClick={() => setActiveTab("completed")}
-          className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+          className={`px-4 py-2 text-sm font-medium transition-colors relative group ${
             activeTab === "completed"
               ? "text-foreground"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          Completed
-          {completedCount > 0 && (
-            <span className="ml-2 px-1.5 py-0.5 text-xs bg-secondary rounded">
-              {completedCount}
-            </span>
-          )}
+          <span className="flex items-center gap-2">
+            Completed
+            {completedCount > 0 && (
+              <span className="px-1.5 py-0.5 text-xs bg-secondary rounded">
+                {completedCount}
+              </span>
+            )}
+            <kbd className="hidden sm:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+              3
+            </kbd>
+          </span>
           {activeTab === "completed" && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
           )}
@@ -244,15 +284,30 @@ export default function TodoDashboard() {
                     )}
                   </button>
                   <div className="flex-1">
-                    <h3
-                      className={`text-base font-mona-medium ${
-                        todo.status === "completed"
-                          ? "line-through text-muted-foreground"
-                          : "text-foreground"
-                      }`}
-                    >
-                      {todo.title}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3
+                        className={`text-base font-mona-medium ${
+                          todo.status === "completed"
+                            ? "line-through text-muted-foreground"
+                            : "text-foreground"
+                        }`}
+                      >
+                        {todo.title}
+                      </h3>
+                      {todo.priority && (
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded ${
+                            todo.priority === "high"
+                              ? "bg-red-500/10 text-red-600 dark:text-red-400"
+                              : todo.priority === "medium"
+                              ? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
+                              : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                          }`}
+                        >
+                          {todo.priority}
+                        </span>
+                      )}
+                    </div>
                     {todo.description && (
                       <p
                         className={`text-sm mt-1 ${
