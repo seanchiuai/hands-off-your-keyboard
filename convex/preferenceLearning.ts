@@ -5,6 +5,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { google } from "@ai-sdk/google";
 import { generateObject } from "ai";
+import { z } from "zod";
 
 /**
  * Internal action to process interaction signals and update preferences using LLM
@@ -14,7 +15,7 @@ export const processSignalsAndUpdatePreferences = internalAction({
   args: {
     userId: v.id("preference_users"),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<any> => {
     try {
       // Get API key from environment
       const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -25,7 +26,7 @@ export const processSignalsAndUpdatePreferences = internalAction({
 
       // Fetch recent interaction signals (last 7 days)
       const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      const signals = await ctx.runQuery(
+      const signals: any[] = await ctx.runQuery(
         internal.interactionSignals.getInteractionsInTimeWindow,
         {
           userId: args.userId,
@@ -39,21 +40,21 @@ export const processSignalsAndUpdatePreferences = internalAction({
       }
 
       // Aggregate signal data
-      const aggregatedData = {
+      const aggregatedData: any = {
         totalInteractions: signals.length,
-        saves: signals.filter((s) => s.type === "save"),
-        purchases: signals.filter((s) => s.type === "purchase"),
-        views: signals.filter((s) => s.type === "view"),
-        voiceQueries: signals.filter((s) => s.type === "voice_query"),
-        dislikes: signals.filter((s) => s.type === "dislike"),
-        categories: [...new Set(signals.map((s) => s.category).filter(Boolean))],
+        saves: signals.filter((s: any) => s.type === "save"),
+        purchases: signals.filter((s: any) => s.type === "purchase"),
+        views: signals.filter((s: any) => s.type === "view"),
+        voiceQueries: signals.filter((s: any) => s.type === "voice_query"),
+        dislikes: signals.filter((s: any) => s.type === "dislike"),
+        categories: [...new Set(signals.map((s: any) => s.category).filter(Boolean))],
         keywords: signals
-          .flatMap((s) => s.extractedKeywords || [])
+          .flatMap((s: any) => s.extractedKeywords || [])
           .filter(Boolean),
       };
 
       // Prepare context for LLM
-      const context = `
+      const context: string = `
 You are analyzing user shopping behavior to extract preferences. Based on the following interaction data, identify the user's preferences.
 
 Interaction Summary:
@@ -68,7 +69,7 @@ Categories of interest: ${aggregatedData.categories.join(", ")}
 Keywords from interactions: ${aggregatedData.keywords.slice(0, 50).join(", ")}
 
 Voice queries (recent):
-${aggregatedData.voiceQueries.slice(0, 10).map((q) => `- ${q.queryText}`).join("\n")}
+${aggregatedData.voiceQueries.slice(0, 10).map((q: any) => `- ${q.queryText}`).join("\n")}
 
 Based on this data, extract the user's preferences for:
 1. Style preferences (e.g., minimalist, modern, vintage, boho, industrial)
@@ -82,65 +83,24 @@ Return structured data that can be used to personalize future recommendations.
 `;
 
       // Call Gemini LLM to extract preferences
-      const result = await generateObject({
+      const result: any = await generateObject({
         model: google("gemini-2.0-flash-exp"),
-        schema: {
-          type: "object",
-          properties: {
-            style: {
-              type: "array",
-              items: { type: "string" },
-              description: "Style preferences (e.g., minimalist, modern, vintage)",
-            },
-            budget: {
-              type: "object",
-              properties: {
-                min: { type: "number" },
-                max: { type: "number" },
-              },
-              required: ["min", "max"],
-              description: "Budget range in USD",
-            },
-            size: {
-              type: "array",
-              items: { type: "string" },
-              description: "Size preferences",
-            },
-            productCategories: {
-              type: "array",
-              items: { type: "string" },
-              description: "Product categories of interest",
-            },
-            brands: {
-              type: "array",
-              items: { type: "string" },
-              description: "Preferred brands",
-            },
-            colors: {
-              type: "array",
-              items: { type: "string" },
-              description: "Preferred colors",
-            },
-            confidence: {
-              type: "string",
-              enum: ["low", "medium", "high"],
-              description: "Confidence level of the extracted preferences",
-            },
-          },
-          required: [
-            "style",
-            "budget",
-            "size",
-            "productCategories",
-            "brands",
-            "colors",
-            "confidence",
-          ],
-        },
+        schema: z.object({
+          style: z.array(z.string()).describe("Style preferences (e.g., minimalist, modern, vintage)"),
+          budget: z.object({
+            min: z.number(),
+            max: z.number(),
+          }).describe("Budget range in USD"),
+          size: z.array(z.string()).describe("Size preferences"),
+          productCategories: z.array(z.string()).describe("Product categories of interest"),
+          brands: z.array(z.string()).describe("Preferred brands"),
+          colors: z.array(z.string()).describe("Preferred colors"),
+          confidence: z.enum(["low", "medium", "high"]).describe("Confidence level of the extracted preferences"),
+        }),
         prompt: context,
       });
 
-      const learnedPreferences = result.object;
+      const learnedPreferences: any = result.object;
 
       // Only update if confidence is medium or high
       if (
@@ -189,14 +149,14 @@ Return structured data that can be used to personalize future recommendations.
  */
 export const triggerPreferenceLearning = action({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<any> => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error("Not authenticated");
     }
 
     // Get user from database
-    const user = await ctx.runQuery(internal.preferenceUsers.getUserByClerkId, {
+    const user: any = await ctx.runQuery(internal.preferenceUsers.getUserByClerkId, {
       clerkUserId: identity.subject,
     });
 
@@ -205,7 +165,7 @@ export const triggerPreferenceLearning = action({
     }
 
     // Trigger the learning process
-    const result = await ctx.runAction(
+    const result: any = await ctx.runAction(
       internal.preferenceLearning.processSignalsAndUpdatePreferences,
       {
         userId: user._id,
@@ -224,7 +184,7 @@ export const analyzeVoiceQuery = action({
   args: {
     queryText: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<any> => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error("Not authenticated");
@@ -239,39 +199,16 @@ export const analyzeVoiceQuery = action({
       // Extract preferences from the voice query
       const result = await generateObject({
         model: google("gemini-2.0-flash-exp"),
-        schema: {
-          type: "object",
-          properties: {
-            keywords: {
-              type: "array",
-              items: { type: "string" },
-              description: "Key terms extracted from the query",
-            },
-            category: {
-              type: "string",
-              description: "Product category mentioned",
-            },
-            style: {
-              type: "array",
-              items: { type: "string" },
-              description: "Style preferences mentioned",
-            },
-            priceRange: {
-              type: "object",
-              properties: {
-                min: { type: "number" },
-                max: { type: "number" },
-              },
-              description: "Price range mentioned",
-            },
-            colors: {
-              type: "array",
-              items: { type: "string" },
-              description: "Colors mentioned",
-            },
-          },
-          required: ["keywords", "category"],
-        },
+        schema: z.object({
+          keywords: z.array(z.string()).describe("Key terms extracted from the query"),
+          category: z.string().describe("Product category mentioned"),
+          style: z.array(z.string()).optional().describe("Style preferences mentioned"),
+          priceRange: z.object({
+            min: z.number(),
+            max: z.number(),
+          }).optional().describe("Price range mentioned"),
+          colors: z.array(z.string()).optional().describe("Colors mentioned"),
+        }),
         prompt: `Analyze the following shopping query and extract structured information:
 
 Query: "${args.queryText}"

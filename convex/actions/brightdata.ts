@@ -19,7 +19,7 @@ export const initiateProductSearch = internalAction({
       targetRetailers: v.optional(v.array(v.string())),
     }),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<any> => {
     try {
       // Update query status to "searching"
       await ctx.runMutation(internal.mutations.brightdata.updateQueryStatus, {
@@ -90,7 +90,7 @@ export const initiateProductSearch = internalAction({
       const processedProducts = processResults(brightDataResult);
 
       // Store the processed products using internal mutation
-      const storeResult = await ctx.runMutation(
+      const storeResult: any = await ctx.runMutation(
         internal.mutations.brightdata.storeProductResults,
         {
           queryId: args.queryId,
@@ -175,9 +175,9 @@ export const refreshProductSearch = internalAction({
   args: {
     queryId: v.id("queries"),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<any> => {
     // Get the original query details
-    const query = await ctx.runQuery(internal.mutations.brightdata.getQueryById, {
+    const query: any = await ctx.runQuery(internal.mutations.brightdata.getQueryById, {
       queryId: args.queryId,
     });
 

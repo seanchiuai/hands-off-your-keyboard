@@ -1,4 +1,4 @@
-import { query, mutation, internalMutation } from "./_generated/server";
+import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
 /**
@@ -56,9 +56,9 @@ export const getOrCreateUser = mutation({
 });
 
 /**
- * Get user by Clerk user ID
+ * Get user by Clerk user ID (internal version for actions)
  */
-export const getUserByClerkId = query({
+export const getUserByClerkId = internalQuery({
   args: { clerkUserId: v.string() },
   handler: async (ctx, args) => {
     const user = await ctx.db
