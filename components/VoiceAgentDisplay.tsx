@@ -25,6 +25,7 @@ interface VoiceAgentDisplayProps {
  */
 export function VoiceAgentDisplay({
   messages,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isAgentSpeaking = false,
   agentStatus = "idle",
   className,

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, X, Plus, Save } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface PreferenceEditorProps {
   onSave?: () => void;
@@ -17,7 +17,6 @@ interface PreferenceEditorProps {
 }
 
 export function PreferenceEditor({ onSave, onCancel }: PreferenceEditorProps) {
-  const { toast } = useToast();
   const preferences = useQuery(api.userPreferences.getUserPreferences);
   const updatePreferences = useMutation(api.userPreferences.updateUserPreferences);
 
@@ -83,18 +82,14 @@ export function PreferenceEditor({ onSave, onCancel }: PreferenceEditorProps) {
         colors: colors.length > 0 ? colors : undefined,
       });
 
-      toast({
-        title: "Preferences saved",
+      toast.success("Preferences saved", {
         description: "Your shopping preferences have been updated successfully.",
       });
 
       onSave?.();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save preferences. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to save preferences. Please try again.");
     } finally {
       setIsSaving(false);
     }

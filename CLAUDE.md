@@ -106,9 +106,8 @@ CLERK_SECRET_KEY=<clerk-secret-key>
 - ESLint configuration for code quality
 
 ## Debugging
-- If the first attempt at fixing a bug does not work according to the user, call context7 mcp.
-- If the second attempt does not work after using context7, create a query for the research agent with sufficient project and error context to find information to fix it. The user will report back with the results, then continue to implement the fix.
-- This applies both to debugging errors and when the user says a feature does not work even though the code is implemented.
+- ALWAYS, call the context7 mcp for debugging errors or when the user complains of a feature that is not working even thought the code is implemented.
+- If the first attempt does not work after using context7, create a query for the research agent with sufficient project and error context to find information to fix it. The user will report back with the results, then continue to implement the fix.
 
 ## Authentication & Security
 - Protected routes using Clerk's authentication in middleware.ts

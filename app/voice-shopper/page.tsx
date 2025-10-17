@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
 import { VoiceAgentDisplay } from "@/components/VoiceAgentDisplay";
-import { ProductCarousel } from "@/components/ProductCarousel";
+import { ProductCard } from "@/components/ProductCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -34,17 +34,19 @@ export default function VoiceShopperPage() {
   const [agentStatus, setAgentStatus] = useState<AgentStatus>("idle");
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [currentProducts, setCurrentProducts] = useState<Product[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [savedProductIds, setSavedProductIds] = useState<Set<string>>(new Set());
 
   // Convex mutations and queries
-  const initiateSession = useMutation(api.voiceShopper.initiateSession);
+  const initiateSession = useAction(api.voiceShopper.initiateSession);
   const endSession = useMutation(api.voiceShopper.endSession);
   const saveShoppingItem = useMutation(api.voiceShopper.saveShoppingItem);
   const shoppingHistory = useQuery(api.voiceShopper.getShoppingHistory, { limit: 20 });
 
   // Mock: In production, this would be replaced with actual research results query
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const researchResults = useQuery(
-    sessionId ? api.voiceShopper.getSessionItems : undefined,
+    api.voiceShopper.getSessionItems,
     sessionId ? { sessionId } : "skip"
   );
 
@@ -117,9 +119,15 @@ export default function VoiceShopperPage() {
   };
 
   // Handle product save
-  const handleSaveProduct = async (product: Product) => {
+  const handleSaveProduct = async (productId: string) => {
     if (!sessionId) {
       toast.error("No active session");
+      return;
+    }
+
+    const product = currentProducts.find((p) => p.productId === productId);
+    if (!product) {
+      toast.error("Product not found");
       return;
     }
 
@@ -255,15 +263,30 @@ export default function VoiceShopperPage() {
                   </CardHeader>
                   <CardContent>
                     {currentProducts.length > 0 ? (
-                      <ProductCarousel
-                        products={currentProducts}
-                        onSaveProduct={handleSaveProduct}
-                        savedProductIds={savedProductIds}
-                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {currentProducts.map((product) => (
+                          <ProductCard
+                            key={product.productId}
+                            product={{
+                              _id: product.productId || "",
+                              title: product.title,
+                              description: product.description,
+                              price: product.price,
+                              currency: "USD",
+                              imageUrl: product.imageUrl,
+                              productUrl: product.productUrl,
+                              availability: true,
+                              source: "voice-search",
+                              systemRank: 1,
+                            }}
+                            onSave={handleSaveProduct}
+                          />
+                        ))}
+                      </div>
                     ) : (
                       <div className="py-12 text-center">
                         <p className="text-muted-foreground">
-                          Start a voice session and tell me what you're looking for!
+                          Start a voice session and tell me what you&apos;re looking for!
                         </p>
                       </div>
                     )}

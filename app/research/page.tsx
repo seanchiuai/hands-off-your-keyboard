@@ -18,8 +18,8 @@ export default function ResearchPage() {
   // Get user's recent queries
   const recentQueries = useQuery(api.queries.getUserQueries, { limit: 10 });
 
-  const handleSearchCreated = (queryId: Id<"queries">) => {
-    setActiveQueryId(queryId);
+  const handleSearchCreated = (queryId: string) => {
+    setActiveQueryId(queryId as Id<"queries">);
     setSelectedTab("results");
   };
 
@@ -28,6 +28,7 @@ export default function ResearchPage() {
     setSelectedTab("results");
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSaveProduct = (productId: string) => {
     toast.success("Product saved to your list!");
     // TODO: Implement actual save functionality
