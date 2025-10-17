@@ -42,8 +42,8 @@ This directory contains implementation plans for all major features in the **Han
 ---
 
 ### 3. Background Research (`feature_background_research.md`)
-**Status**: ✅ Implemented & Tested
-**Description**: AI-powered background product research using Google Gemini API with Search grounding. Automatically searches for products across retailers, processes results using AI, and ranks products based on user preferences.
+**Status**: Planned
+**Description**: Continuous background product research using Bright Data's web scraping API. Automatically searches e-commerce sites, processes results, and ranks products based on user preferences.
 
 **Key Components**:
 - Google Gemini API integration with Search grounding
@@ -51,9 +51,9 @@ This directory contains implementation plans for all major features in the **Han
 - JSON and text response parsing
 - Product filtering and re-ranking logic
 - Query status tracking
-- Real-time product streaming to frontend
+- Scheduled continuous searches
 
-**Tech Stack**: Next.js, Convex, Google Gemini API (gemini-2.5-flash)
+**Tech Stack**: Next.js, Convex, Bright Data API
 
 ---
 
@@ -119,5 +119,5 @@ This directory is referenced in the main `CLAUDE.md` file under "Custom Agents, 
 
 ---
 
-**Last Updated**: October 16, 2025
-**Total Plans**: 3
+**Last Updated**: October 17, 2025
+**Total Plans**: 4
