@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, History, Heart, Settings, Mic } from "lucide-react";
+import { Home, History, Heart, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "History", href: "/history", icon: History },
   { name: "Saved", href: "/saved", icon: Heart },
-  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {

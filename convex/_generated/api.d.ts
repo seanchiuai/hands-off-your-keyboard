@@ -8,7 +8,9 @@
  * @module
  */
 
+import type * as actions_bestBuyScraper from "../actions/bestBuyScraper.js";
 import type * as actions_brightdata from "../actions/brightdata.js";
+import type * as actions_playwrightScraper from "../actions/playwrightScraper.js";
 import type * as actions_searchProducts from "../actions/searchProducts.js";
 import type * as http from "../http.js";
 import type * as interactionSignals from "../interactionSignals.js";
@@ -40,7 +42,9 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "actions/bestBuyScraper": typeof actions_bestBuyScraper;
   "actions/brightdata": typeof actions_brightdata;
+  "actions/playwrightScraper": typeof actions_playwrightScraper;
   "actions/searchProducts": typeof actions_searchProducts;
   http: typeof http;
   interactionSignals: typeof interactionSignals;

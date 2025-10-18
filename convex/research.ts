@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalAction, internalMutation } from "./_generated/server";
+import { internalAction, internalMutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 
 /**
@@ -341,3 +341,34 @@ function generateMockProducts(
     price: Math.round((p.basePrice + (Math.random() - 0.5) * 50) * 100) / 100,
   }));
 }
+
+/**
+ * Get the latest research results for the current user's active session
+ * Returns flattened product array from the most recent research
+ */
+export const getLatestResearchResults = query({
+  args: {
+    sessionId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // If sessionId provided, get results for that session
+    const sessionId = args.sessionId;
+    if (sessionId) {
+      const results = await ctx.db
+        .query("research_results")
+        .withIndex("by_session", (q) => q.eq("sessionId", sessionId))
+        .order("desc")
+        .first();
+
+      return results?.results || [];
+    }
+
+    // Otherwise, get the most recent research results across all sessions
+    const allResults = await ctx.db
+      .query("research_results")
+      .order("desc")
+      .take(1);
+
+    return allResults[0]?.results || [];
+  },
+});

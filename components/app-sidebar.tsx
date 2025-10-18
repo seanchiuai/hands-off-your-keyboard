@@ -6,7 +6,7 @@ import {
   IconHelp,
   IconInnerShadowTop,
   IconMicrophone,
-  IconSettings,
+  IconBug,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -34,17 +34,12 @@ const data = {
       url: "/history",
       icon: IconInnerShadowTop,
     },
-    {
-      title: "Settings",
-      url: "/settings",
-      icon: IconSettings,
-    },
   ],
   navSecondary: [
     {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
+      title: "Dev Test",
+      url: "/dev-test",
+      icon: IconBug,
     },
     {
       title: "Help",

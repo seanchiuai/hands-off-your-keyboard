@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, History, Heart, Settings, Mic, Menu } from "lucide-react";
+import { Home, History, Heart, Mic, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -12,7 +12,6 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "History", href: "/history", icon: History },
   { name: "Saved", href: "/saved", icon: Heart },
-  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function MobileSidebar() {

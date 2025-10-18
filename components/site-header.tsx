@@ -10,7 +10,7 @@ export function SiteHeader() {
 
   const getPageTitle = () => {
     if (pathname?.startsWith("/history")) return "History";
-    if (pathname?.startsWith("/settings")) return "Settings";
+    if (pathname?.startsWith("/dev-test")) return "Developer Test Console";
     return "Hands Off Your Keyboard";
   };
 
@@ -31,7 +31,6 @@ export function SiteHeader() {
         </div>
         <div className="flex items-center gap-2">
           <a href="/history" className="text-sm text-muted-foreground hover:text-foreground">History</a>
-          <a href="/settings" className="text-sm text-muted-foreground hover:text-foreground">Settings</a>
         </div>
       </div>
     </header>
