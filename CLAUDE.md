@@ -72,20 +72,6 @@ This is a full-stack TypeScript application using:
 - **Middleware** (middleware.ts) protects `/server` routes using Clerk
 - Path aliases configured: `@/*` maps to root directory
 
-## Setup Requirements
-
-### Environment Variables
-```env
-NEXT_PUBLIC_CONVEX_URL=<your-convex-deployment-url>
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=<clerk-publishable-key>
-CLERK_SECRET_KEY=<clerk-secret-key>
-```
-
-### Clerk JWT Configuration
-1. Create a JWT template named "convex" in Clerk dashboard
-2. Set issuer domain in the template
-3. Add `CLERK_JWT_ISSUER_DOMAIN` environment variable in Convex dashboard
-
 ## Project Structure
 - `/app` - Next.js pages and layouts (App Router)
   - `/app/(auth)` - Authentication pages if needed
