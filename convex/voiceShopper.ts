@@ -329,3 +329,27 @@ export const getActiveSessions = query({
       .collect();
   },
 });
+
+/**
+ * Get all voice sessions (history) for the authenticated user
+ */
+export const getAllSessions = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+
+    const userId = identity.subject;
+    const limit = args.limit ?? 100;
+
+    return ctx.db
+      .query("voice_sessions")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(limit);
+  },
+});

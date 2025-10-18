@@ -78,13 +78,15 @@ The Voice Shopper feature enables users to interact with a real-time AI voice ag
 ### 4. Backend Functions (Convex & Pipecat Agent)
 
 #### Convex Functions
-- [ ] `voiceShopper.createSession(userId)`: Create a new voice shopping session
-- [ ] `voiceShopper.getSession(sessionId)`: Get session details
-- [ ] `voiceShopper.logConversation(sessionId, speaker, text)`: Log conversation messages
-- [ ] `voiceShopper.savePreference(userId, preferenceKey, preferenceValue)`: Store user shopping preferences
-- [ ] `voiceShopper.getPreferences(userId)`: Retrieve user shopping preferences
-- [ ] `voiceShopper.saveItem(userId, productId, name, description, imageUrl, productUrl)`: Save a product to user's list
-- [ ] `voiceShopper.getSavedItems(userId)`: Retrieve user's saved products
+- [x] `voiceShopper.createSession(userId)`: Create a new voice shopping session
+- [x] `voiceShopper.getSession(sessionId)`: Get session details
+- [x] `voiceShopper.logConversation(sessionId, speaker, text)`: Log conversation messages
+- [x] `voiceShopper.savePreference(userId, preferenceKey, preferenceValue)`: Store user shopping preferences
+- [x] `voiceShopper.getPreferences(userId)`: Retrieve user shopping preferences
+- [x] `voiceShopper.saveItem(userId, productId, name, description, imageUrl, productUrl)`: Save a product to user's list
+- [x] `voiceShopper.getSavedItems(userId)`: Retrieve user's saved products
+- [x] `voiceShopper.getAllSessions(limit?)`: Get all voice sessions for history page (supports pagination)
+- [x] `voiceShopper.getActiveSessions()`: Get only active sessions for the authenticated user
 - [ ] `research.triggerProductSearch(sessionId, query)`: Trigger background product research
 - [ ] `research.getResearchResults(sessionId)`: Get research results for a session
 
@@ -103,6 +105,10 @@ The Voice Shopper feature enables users to interact with a real-time AI voice ag
     - `sendCarouselData(productData)`: Send structured product data to frontend via WebSocket
 
 ### 5. Frontend
+
+#### Pages
+- [x] `/app/voice-shopper/page.tsx`: Main voice shopping interface with microphone controls and product carousel
+- [x] `/app/history/page.tsx`: Voice session history page displaying all past voice interactions
 
 #### Components
 - [ ] `VoiceInputButton`: Initiates/stops voice recording, displays mic status
@@ -653,3 +659,59 @@ You've successfully set up:
 The system is ready for local testing. Follow the Production Deployment section for production deployment.
 
 **Next action required**: Complete WebSocket integration and deploy Pipecat server for full voice functionality.
+
+---
+
+## Voice History Page Implementation
+
+**Last Updated**: October 17, 2025
+
+The Voice History page (`/app/history/page.tsx`) provides users with a comprehensive view of all their past voice shopping sessions.
+
+### Features
+
+**Session Display**:
+- Shows all voice sessions (active, completed, and failed)
+- Groups sessions by date for easy navigation
+- Displays session status with color-coded badges:
+  - Green: Active sessions
+  - Blue: Completed sessions
+  - Red: Failed/error sessions
+- Shows session duration for completed sessions
+
+**Search & Filter**:
+- Search functionality to filter sessions by text
+- Export to Markdown feature for session history backup
+
+**Session Actions**:
+- View button to navigate to session details (future implementation)
+- Pin/Unpin functionality to mark important sessions
+- Pinned sessions stored in localStorage
+
+### Technical Implementation
+
+**Data Source**:
+- Uses `api.voiceShopper.getAllSessions` Convex query
+- Fetches up to 100 most recent sessions by default
+- Real-time updates via Convex reactivity
+
+**User Experience**:
+- Empty state shown when no sessions exist
+- Sessions grouped chronologically by date
+- Responsive design matches app's existing UI patterns
+
+**Key Changes Made**:
+1. ✅ Added `getAllSessions` query to `convex/voiceShopper.ts`
+2. ✅ Removed mock data from history page
+3. ✅ Removed "search" filter option (voice-only sessions)
+4. ✅ Connected history page to real Convex database
+5. ✅ Updated UI to display session metadata (status, duration, timestamp)
+
+### Database Connection
+
+The history page connects to the `voice_sessions` table in Convex schema:
+- **Table**: `voice_sessions`
+- **Query**: `getAllSessions(limit?: number)`
+- **Displays**: sessionId, userId, status, startTime, endTime
+
+**Note**: The history page ONLY displays voice sessions from the Voice Shopper feature (connected to Gemini → Pipecat → SERP API). It does NOT display data from the old Background Research feature (`queries` table).
