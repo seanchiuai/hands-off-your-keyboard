@@ -75,6 +75,53 @@ This directory contains implementation plans for all major features in the **Han
 
 ---
 
+### 5. Playwright Scraper Integration (`FEATURE_PLAYWRIGHT_SCRAPER_INTEGRATION.md`)
+**Status**: Planned
+**Description**: Fallback web scraping mechanism for extracting product data from retailers without APIs. Enables comprehensive e-commerce coverage across Best Buy, Target, Costco, B&H Photo, and Newegg.
+
+**Key Components**:
+- Playwright-based scraper templates
+- Search orchestrator integration for parallel scraping
+- Best Buy scraper implementation
+- Template-based scraper for multiple retailers
+- Product extraction and normalization
+- Performance optimization with caching
+
+**Tech Stack**: Next.js, Convex, Playwright MCP, Best Buy/Target/Costco scrapers
+
+---
+
+### 6. SerpAPI Integration (`FEATURE_SERPAPI_INTEGRATION.md`)
+**Status**: Planned
+**Description**: Google Shopping product search integration via SerpAPI. Provides fast, API-based product search across major retailers with pricing, reviews, and availability data.
+
+**Key Components**:
+- SerpAPI key setup and configuration
+- Environment variable management (local + Convex)
+- Product search action integration
+- Rate limiting and quota management
+- Response parsing and normalization
+
+**Tech Stack**: Next.js, Convex, SerpAPI
+
+---
+
+### 7. Voice Agent Pipecat Setup (`FEATURE_VOICE_AGENT_PIPECAT_SETUP.md`)
+**Status**: In Progress
+**Description**: Python-based real-time voice processing server using Pipecat AI. Handles microphone input, speech-to-text, LLM conversation with Gemini, and text-to-speech responses.
+
+**Key Components**:
+- Pipecat Python server setup
+- Gemini API integration for conversation
+- WebSocket connection management
+- Environment configuration sync
+- Audio processing pipeline
+- Troubleshooting and debugging guides
+
+**Tech Stack**: Python, Pipecat AI, Gemini API, WebSockets, Convex HTTP
+
+---
+
 ## Plan Naming Convention
 
 All feature plans follow this naming pattern:
@@ -138,4 +185,4 @@ This directory is referenced in the main `CLAUDE.md` file under "Custom Agents, 
 ---
 
 **Last Updated**: October 17, 2025
-**Total Plans**: 5
+**Total Plans**: 8
