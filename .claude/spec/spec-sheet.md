@@ -18,39 +18,31 @@ HANDS OFF YOUR KEYBOARD! is a voice-first shopping website where you talk to an 
 Modern, clean, intuitive UI without being flashy.
 
 5. UI Structure
-The app features a simplified, voice-first interface with 4 main pages and a persistent sidebar:
+The app features a streamlined, single-page interface optimized for voice-first shopping:
 
-**Navigation:**
-- Persistent sidebar on the left for all pages
-- Simple navigation between pages
-- Clean, minimal design
+**Layout:**
+- Two-column layout: Voice agent on the left, workspace on the right
+- No navigation between pages - everything on one screen
+- Clean, minimal design focused on the conversation and results
 
-**Pages:**
-1. **Main Dashboard** (`/`)
-   - Primary interaction point for voice shopping
-   - Large microphone button for voice interaction
-   - Product display area showing search results
-   - Save button for each product
-   - No text input - purely voice-driven
+**Left Panel: Voice Agent**
+- Real-time conversation display showing user/agent dialogue
+- Visual status indicators (listening, thinking, speaking, searching)
+- Large microphone button for voice interaction
+- Interim transcript display during speech
+- Conversation history scrollable
 
-2. **History** (`/history`)
-   - View past conversations with AI
-   - Manage AI's memory of user preferences
-   - Edit or reset learned preferences
-   - Review interaction history
-
-3. **Saved Products** (`/saved`)
-   - Collection of all saved products
-   - Product cards with images, names, and links
-   - Option to remove saved items
-
-4. **Settings** (`/settings`)
-   - User account information
-   - Logout functionality
-   - App configuration options
+**Right Panel: Main Workspace**
+- Dynamic product display area showing search results in real-time
+- Product carousel with images, prices, reviews, and buy links
+- Save functionality for products
+- Pinned queries for quick re-access
+- Recently viewed items
+- Status and tips section
 
 **Design Principles:**
-- Voice-first: Microphone interaction as the primary input method
-- Minimal UI: Clean, uncluttered interface focused on essential features
-- Clear hierarchy: Easy navigation between the 4 main pages
-- Consistent layout: Sidebar always present for quick access
+- Voice-first: Microphone interaction as the primary and only input method
+- Single-page: All functionality accessible without navigation
+- Real-time: Live updates as the agent searches and responds
+- Minimal UI: Clean, uncluttered interface focused on conversation and results
+- Visual feedback: Clear status indicators for agent activity
