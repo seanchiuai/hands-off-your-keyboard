@@ -1,0 +1,40 @@
+2025-10-17 18:55:04.788 | INFO     | pipecat:<module>:14 - ᓚᘏᗢ Pipecat 0.0.90 (Python 3.13.7 (main, Aug 14 2025, 11:12:11) [Clang 17.0.0 (clang-1700.0.13.3)]) ᓚᘏᗢ
+2025-10-17 18:55:06,279 - __main__ - INFO - Configuration validated successfully
+2025-10-17 18:55:06,280 - __main__ - INFO - === Voice Shopper Simple WebSocket Server ===
+2025-10-17 18:55:06,280 - __main__ - INFO - Starting FastAPI server...
+INFO:     Started server process [178]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:64284 - "WebSocket /" 403
+INFO:     connection rejected (403 Forbidden)
+INFO:     127.0.0.1:64285 - "WebSocket /" 403
+INFO:     connection rejected (403 Forbidden)
+INFO:     connection closed
+INFO:     connection closed
+INFO:     127.0.0.1:50975 - "WebSocket /" 403
+INFO:     connection rejected (403 Forbidden)
+INFO:     connection closed
+INFO:     127.0.0.1:50977 - "WebSocket /" 403
+INFO:     connection rejected (403 Forbidden)
+INFO:     connection closed
+INFO:     127.0.0.1:50979 - "WebSocket /" 403
+INFO:     connection rejected (403 Forbidden)
+INFO:     connection closed
+INFO:     127.0.0.1:50981 - "WebSocket /" 403
+INFO:     connection rejected (403 Forbidden)
+INFO:     connection closed
+INFO:     127.0.0.1:51747 - "WebSocket /" 403
+INFO:     connection rejected (403 Forbidden)
+INFO:     connection closed
+INFO:     127.0.0.1:51749 - "WebSocket /" 403
+INFO:     connection rejected (403 Forbidden)
+INFO:     connection closed
+INFO:     127.0.0.1:51924 - "WebSocket /" 403
+INFO:     connection rejected (403 Forbidden)
+INFO:     connection closed
+INFO:     127.0.0.1:51925 - "WebSocket /" 403
+INFO:     connection rejected (403 Forbidden)
+INFO:     connection closed
+INFO:     127.0.0.1:51928 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51929 - "GET /health HTTP/1.1" 404 Not Found

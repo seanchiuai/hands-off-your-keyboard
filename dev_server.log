@@ -1,0 +1,17 @@
+
+> my-app@0.1.0 dev
+> npm-run-all --parallel dev:frontend dev:backend
+
+
+> my-app@0.1.0 dev:backend
+> convex dev --once
+
+
+> my-app@0.1.0 dev:frontend
+> NODE_OPTIONS='--max-http-header-size=32768' next dev --turbopack
+
+Tip: You can try out Convex without creating an account by clearing the CONVEX_DEPLOYMENT environment variable.
+Welcome to developing with Convex, let's get you logged in.
+✖ Cannot prompt for input in non-interactive terminals. (Device name:)
+[?25h
+ERROR: "dev:backend" exited with 1.

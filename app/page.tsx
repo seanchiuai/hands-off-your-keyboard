@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { Authenticated, Unauthenticated } from "convex/react";
 import { SignUpButton, SignInButton } from "@clerk/nextjs";
-import { useAction, useQuery } from "convex/react";
+import { useAction, useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
 import { toast } from "sonner";
 import { useAudioStream } from "@/hooks/use-audio-stream";
 import { useWebSocketConnection } from "@/hooks/use-websocket-connection";
+import { Heart, TrendingUp, DollarSign, Sparkles } from "lucide-react";
 
 export default function Home() {
   return (
@@ -26,16 +27,24 @@ export default function Home() {
 
 type AgentStatus = "idle" | "listening" | "thinking" | "speaking" | "searching";
 
+type SortOption = "relevance" | "price-low" | "price-high" | "newest";
+
 function SinglePageUI() {
   const { user } = useUser();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [agentStatus, setAgentStatus] = useState<AgentStatus>("idle");
+  const [sortBy, setSortBy] = useState<SortOption>("relevance");
+  const [savedProductIds, setSavedProductIds] = useState<Set<string>>(new Set());
   const stopCaptureRef = useRef<(() => void) | null>(null);
 
   // Convex queries and actions
   const initiateSession = useAction(api.voiceShopper.initiateSession);
+  const saveProduct = useMutation(api.preferenceItemsManagement.saveItemForPreferences);
+
+  // Get saved items to track which products are saved
+  const savedItems = useQuery(api.preferenceItemsManagement.getSavedItems, {});
 
   // Get research results from background research agent
   // Skip query if no sessionId to prevent unauthorized access
@@ -43,6 +52,13 @@ function SinglePageUI() {
     api.research.getLatestResearchResults,
     sessionId ? { sessionId } : "skip"
   );
+
+  // Update saved product IDs when savedItems changes
+  useMemo(() => {
+    if (savedItems) {
+      setSavedProductIds(new Set(savedItems.map(item => item.productId)));
+    }
+  }, [savedItems]);
 
   // Audio streaming hooks
   const { startCapture, stopCapture, playAudio, stopAudio, initAudioContext } = useAudioStream();
@@ -172,20 +188,114 @@ function SinglePageUI() {
     }
   };
 
+  // Handle save product
+  const handleSaveProduct = async (product: any) => {
+    if (!sessionId) return;
+
+    try {
+      await saveProduct({
+        sessionId,
+        productId: product.productUrl, // Using URL as unique ID
+        productName: product.title,
+        description: product.description,
+        imageUrl: product.imageUrl,
+        productUrl: product.productUrl,
+        price: product.price,
+      });
+
+      setSavedProductIds(prev => new Set([...prev, product.productUrl]));
+      toast.success("Product saved!");
+    } catch (error) {
+      console.error("Failed to save product:", error);
+      toast.error("Failed to save product");
+    }
+  };
+
+  // Sort products
+  const sortedProducts = useMemo(() => {
+    if (!researchResults) return [];
+
+    const products = [...researchResults];
+
+    switch (sortBy) {
+      case "price-low":
+        return products.sort((a, b) => a.price - b.price);
+      case "price-high":
+        return products.sort((a, b) => b.price - a.price);
+      case "newest":
+        return products.reverse();
+      case "relevance":
+      default:
+        return products;
+    }
+  }, [researchResults, sortBy]);
+
   return (
     <main className="min-h-screen w-full bg-gradient-to-br from-background via-background to-muted/20 flex flex-col items-center justify-start px-4 py-12">
       {/* Header */}
-      <header className="mb-12 text-center">
-        <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
+      <header className="mb-8 text-center w-full max-w-2xl">
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6">
           Hands Off Your Keyboard
         </h1>
-        <p className="text-lg text-muted-foreground">
-          {agentStatus === "idle" && "Click the mic to start shopping"}
-          {agentStatus === "listening" && "Listening..."}
-          {agentStatus === "thinking" && "Processing your request..."}
-          {agentStatus === "speaking" && "Getting your results..."}
-          {agentStatus === "searching" && "Searching for products..."}
-        </p>
+
+        {/* Enhanced Status Indicator */}
+        <div className="relative">
+          <div className={`
+            px-6 py-4 rounded-2xl border-2 transition-all duration-300
+            ${agentStatus === "idle" ? "border-border/40 bg-card/30" : "border-primary/50 bg-primary/5"}
+          `}>
+            <div className="flex items-center justify-center gap-3">
+              {/* Animated Status Icon */}
+              <div className={`
+                relative flex items-center justify-center
+                ${agentStatus !== "idle" ? "animate-pulse-ring" : ""}
+              `}>
+                {agentStatus === "idle" && (
+                  <Sparkles className="h-6 w-6 text-muted-foreground" />
+                )}
+                {agentStatus === "listening" && (
+                  <div className="relative">
+                    <div className="h-6 w-6 rounded-full bg-green-500 animate-pulse" />
+                    <div className="absolute inset-0 h-6 w-6 rounded-full bg-green-500/30 animate-ping" />
+                  </div>
+                )}
+                {agentStatus === "thinking" && (
+                  <div className="h-6 w-6 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                )}
+                {agentStatus === "speaking" && (
+                  <div className="flex gap-1">
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="w-1 h-6 bg-primary rounded-full animate-bounce"
+                        style={{ animationDelay: `${i * 0.1}s` }}
+                      />
+                    ))}
+                  </div>
+                )}
+                {agentStatus === "searching" && (
+                  <TrendingUp className="h-6 w-6 text-primary animate-bounce" />
+                )}
+              </div>
+
+              {/* Status Text */}
+              <span className="text-lg font-medium">
+                {agentStatus === "idle" && "Click the mic to start shopping"}
+                {agentStatus === "listening" && "Listening..."}
+                {agentStatus === "thinking" && "Processing your request..."}
+                {agentStatus === "speaking" && "Getting your results..."}
+                {agentStatus === "searching" && "Searching for products..."}
+              </span>
+            </div>
+
+            {/* Progress Bar */}
+            {agentStatus !== "idle" && (
+              <div className="mt-3 h-1 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-blue-600 to-purple-600 animate-progress-indeterminate" />
+              </div>
+            )}
+          </div>
+        </div>
       </header>
 
       {/* Microphone Button */}
@@ -200,50 +310,95 @@ function SinglePageUI() {
 
       {/* Product Grid */}
       <div className="w-full max-w-7xl">
-        {researchResults && researchResults.length > 0 ? (
+        {sortedProducts.length > 0 ? (
           <>
-            <h2 className="text-2xl font-bold mb-6 text-center">Suggested Products</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {researchResults.map((product, index) => (
-                <div
-                  key={index}
-                  className="group relative rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm shadow-md hover:shadow-xl transition-all overflow-hidden"
-                >
-                  {/* Product Image */}
-                  {product.imageUrl && (
-                    <div className="aspect-square w-full overflow-hidden bg-muted">
-                      <img
-                        src={product.imageUrl}
-                        alt={product.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  )}
+            {/* Header with Sort Controls */}
+            <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold">Suggested Products</h2>
+                <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                  {sortedProducts.length} {sortedProducts.length === 1 ? 'result' : 'results'}
+                </span>
+              </div>
 
-                  {/* Product Info */}
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                      {product.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                      {product.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold text-primary">
-                        ${product.price.toFixed(2)}
-                      </span>
-                      <a
-                        href={product.productUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
-                      >
-                        View
-                      </a>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground hidden sm:inline">Sort by:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  className="px-3 py-2 bg-card border border-border/60 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                >
+                  <option value="relevance">Relevance</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="newest">Newest First</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 stagger-fade-in">
+              {sortedProducts.map((product, index) => {
+                const isSaved = savedProductIds.has(product.productUrl);
+
+                return (
+                  <div
+                    key={index}
+                    className="group relative rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm shadow-md hover:shadow-xl transition-all overflow-hidden"
+                  >
+                    {/* Save Button */}
+                    <button
+                      onClick={() => handleSaveProduct(product)}
+                      disabled={isSaved}
+                      className={`absolute top-3 right-3 z-10 p-2 rounded-full backdrop-blur-sm transition-all ${
+                        isSaved
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-black/30 hover:bg-black/50 text-white'
+                      }`}
+                      title={isSaved ? 'Saved' : 'Save product'}
+                    >
+                      <Heart
+                        className={`h-5 w-5 transition-all ${isSaved ? 'fill-current' : ''}`}
+                      />
+                    </button>
+
+                    {/* Product Image */}
+                    {product.imageUrl && (
+                      <div className="aspect-square w-full overflow-hidden bg-muted">
+                        <img
+                          src={product.imageUrl}
+                          alt={product.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    )}
+
+                    {/* Product Info */}
+                    <div className="p-4">
+                      <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                        {product.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+                        {product.description}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-2xl font-bold text-primary flex items-center gap-1">
+                          <DollarSign className="h-5 w-5" />
+                          {product.price.toFixed(2)}
+                        </span>
+                        <a
+                          href={product.productUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium inline-flex items-center gap-2"
+                        >
+                          View
+                          <TrendingUp className="h-4 w-4" />
+                        </a>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         ) : (
