@@ -165,3 +165,11 @@ When implementing features that require API keys:
 2. **Match existing design** - New designs should closely match the existing UI screens, pages, and components, unless otherwise stated by the user
 3. **Then add functionality** - After the UI is in place, implement the business logic, state management, and backend integration
 4. This approach ensures a clear separation of concerns and makes it easier to iterate on both design and functionality independently
+
+## Minimum Viable Product (MVP) Approach
+**IMPORTANT**: When building, work on ONLY the Minimum Viable Product (MVP):
+- Focus exclusively on implementing the core features explicitly requested by users
+- Prioritize ensuring these core features work reliably and deliver real user value
+- Avoid introducing additional features like extra settings, customization, or "nice-to-have" options that were not requested
+- Do not add additional features without confirmation from the user
+- The MVP goal is to ship a solid, usable version of what users asked for as quickly as possible, before considering enhancements or additional features

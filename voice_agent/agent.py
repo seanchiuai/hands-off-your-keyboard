@@ -18,7 +18,8 @@ try:
     from pipecat.pipeline.runner import PipelineRunner
     from pipecat.processors.aggregators.llm_context import LLMContext
     from pipecat.processors.aggregators.llm_response_universal import LLMContextAggregatorPair
-    from pipecat.services.google import GoogleLLMService, GoogleTTSService
+    from pipecat.services.google.llm import GoogleLLMService
+    from pipecat.services.cartesia.tts import CartesiaTTSService
     from pipecat.audio.vad.silero import SileroVADAnalyzer
     from pipecat.audio.vad.vad_analyzer import VADParams
     from pipecat.frames.frames import LLMRunFrame, EndFrame
@@ -49,6 +50,7 @@ class VoiceShopperAgent:
 
     def __init__(self):
         self.google_api_key = os.getenv("GOOGLE_API_KEY")
+        self.cartesia_api_key = os.getenv("CARTESIA_API_KEY")
         self.convex_url = os.getenv("CONVEX_HTTP_URL")
         self.pipecat_secret = os.getenv("PIPECAT_SERVER_SECRET")
         self.host = os.getenv("SERVER_HOST", "0.0.0.0")
@@ -67,6 +69,7 @@ class VoiceShopperAgent:
         """Validate that required environment variables are set"""
         required_vars = {
             "GOOGLE_API_KEY": self.google_api_key,
+            "CARTESIA_API_KEY": self.cartesia_api_key,
             "CONVEX_HTTP_URL": self.convex_url,
             "PIPECAT_SERVER_SECRET": self.pipecat_secret,
         }
@@ -100,10 +103,10 @@ class VoiceShopperAgent:
             model="gemini-1.5-flash",
         )
 
-        # Initialize TTS service (Google TTS)
-        tts_service = GoogleTTSService(
-            api_key=self.google_api_key,
-            voice_id="en-US-Neural2-F",  # Female voice
+        # Initialize TTS service (Cartesia TTS)
+        tts_service = CartesiaTTSService(
+            api_key=self.cartesia_api_key,
+            voice_id="71a7ad14-091c-4e8e-a314-022ece01c121",  # Pleasant female voice
         )
 
         # Build the system prompt with context
@@ -198,10 +201,10 @@ class VoiceShopperAgent:
         try:
             # For now, use LocalAudioTransport for development
             # TODO: Implement proper WebSocket transport when available
-            from pipecat.transports.local.audio import LocalAudioTransport, LocalAudioParams
+            from pipecat.transports.local.audio import LocalAudioTransport, LocalAudioTransportParams
 
             transport = LocalAudioTransport(
-                params=LocalAudioParams(
+                params=LocalAudioTransportParams(
                     audio_in_enabled=True,
                     audio_out_enabled=True,
                     audio_in_sample_rate=16000,
@@ -230,7 +233,7 @@ class VoiceShopperAgent:
 
     async def run_local(self):
         """Run the agent locally for testing"""
-        from pipecat.transports.local.audio import LocalAudioTransport, LocalAudioParams
+        from pipecat.transports.local.audio import LocalAudioTransport, LocalAudioTransportParams
 
         logger.info("Starting Voice Shopper Agent (local mode)")
         logger.info(f"Convex backend: {self.convex_url}")
@@ -238,7 +241,7 @@ class VoiceShopperAgent:
 
         # Create local audio transport
         transport = LocalAudioTransport(
-            params=LocalAudioParams(
+            params=LocalAudioTransportParams(
                 audio_in_enabled=True,
                 audio_out_enabled=True,
                 audio_in_sample_rate=16000,
