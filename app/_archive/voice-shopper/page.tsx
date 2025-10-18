@@ -37,7 +37,6 @@ export default function VoiceShopperPage() {
   const [isActive, setIsActive] = useState(false);
   const [agentStatus, setAgentStatus] = useState<AgentStatus>("idle");
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
-  const [interimTranscript, setInterimTranscript] = useState<string>("");
   const [currentProducts, setCurrentProducts] = useState<Product[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [savedProductIds, setSavedProductIds] = useState<Set<string>>(new Set());
@@ -100,25 +99,6 @@ export default function VoiceShopperPage() {
             timestamp: Date.now(),
           },
         ]);
-      } else if (message.type === "transcription") {
-        // Handle user speech transcription
-        if (message.data.is_final) {
-          // Final transcription - add as user message
-          setInterimTranscript("");
-          if (message.data.text && message.data.text.trim()) {
-            setMessages((prev) => [
-              ...prev,
-              {
-                speaker: "user",
-                text: message.data.text,
-                timestamp: Date.now(),
-              },
-            ]);
-          }
-        } else {
-          // Interim transcription - show as typing indicator
-          setInterimTranscript(message.data.text || "");
-        }
       } else if (message.type === "status") {
         // Update agent status
         if (message.data.status === "thinking") {
@@ -353,7 +333,6 @@ export default function VoiceShopperPage() {
             {/* Conversation Display */}
             <VoiceAgentDisplay
               messages={messages}
-              interimTranscript={interimTranscript}
               agentStatus={agentStatus}
               className="min-h-[400px]"
             />

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
-import { useMutation } from "convex/react";
+import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
 interface VoiceInputProps {
@@ -15,7 +15,7 @@ export function VoiceInput({ onTranscript, onStatusChange }: VoiceInputProps) {
   const [isConnecting, setIsConnecting] = useState(false);
 
   // Create session when voice starts
-  const createSession = useMutation(api.voiceShopper.createSession);
+  const createSession = useAction(api.voiceShopper.initiateSession);
 
   const handleSessionStart = async () => {
     setIsConnecting(true);
@@ -23,7 +23,7 @@ export function VoiceInput({ onTranscript, onStatusChange }: VoiceInputProps) {
 
     try {
       // Create a new voice session
-      const session = await createSession();
+      await createSession();
 
       // TODO: Connect to Pipecat WebSocket server
       // For now, this is a placeholder for the real implementation
@@ -66,7 +66,7 @@ export function VoiceInput({ onTranscript, onStatusChange }: VoiceInputProps) {
         isActive={isListening}
       />
       <p className="mt-12 text-center text-sm text-muted-foreground max-w-md">
-        Tap the microphone to start speaking. Tell me what you're looking for and I'll help you find it.
+        Tap the microphone to start speaking. Tell me what you&apos;re looking for and I&apos;ll help you find it.
       </p>
     </div>
   );

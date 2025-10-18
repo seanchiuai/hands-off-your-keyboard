@@ -68,7 +68,7 @@ export function ProductDisplay({ products, isLoading, error }: ProductDisplayPro
           </div>
           <h3 className="text-lg font-semibold mb-2">No products yet</h3>
           <p className="text-sm text-muted-foreground">
-            Use the microphone above to tell me what you're looking for and I'll find the best products for you.
+            Use the microphone above to tell me what you&apos;re looking for and I&apos;ll find the best products for you.
           </p>
         </div>
       </div>

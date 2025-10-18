@@ -37,10 +37,10 @@ export default function HistoryPage() {
 
   const groups = filtered.reduce<Record<string, typeof entries>>( (acc, item) => {
     const key = new Date(item.ts).toDateString();
-    acc[key] = acc[key] || [] as any;
+    acc[key] = acc[key] || [];
     acc[key].push(item);
     return acc;
-  }, {});
+  }, {} as Record<string, typeof entries>);
   const ordered = Object.entries(groups).sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime());
 
   const togglePin = (id: number) => {

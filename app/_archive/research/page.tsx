@@ -50,7 +50,7 @@ export default function ResearchPage() {
 
   const handleSaveProduct = async (productId: string) => {
     try {
-      await saveProduct({ productId });
+      await saveProduct({ productId: productId as Id<"products"> });
       toast.success("Product saved to your list!");
     } catch (error) {
       console.error("Failed to save product:", error);
