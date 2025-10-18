@@ -182,6 +182,27 @@ http.route({
 
       console.log(`[HTTP] Triggering research for query: "${query}"`);
 
+      // Verify session exists and matches the provided userId
+      const session = await ctx.runQuery(internal.voiceShopper.getSessionByIdInternal, {
+        sessionId,
+      });
+
+      if (!session) {
+        console.warn(`[HTTP] Session not found: ${sessionId}`);
+        return new Response(
+          JSON.stringify({ error: "Session not found" }),
+          { status: 404, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      if (session.userId !== userId) {
+        console.warn(`[HTTP] Session/User mismatch. Session userId: ${session.userId}, Provided: ${userId}`);
+        return new Response(
+          JSON.stringify({ error: "Session/User mismatch" }),
+          { status: 403, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
       // Call internal action to perform background research
       const result = await ctx.runAction(internal.research.triggerBackgroundResearch, {
         query,

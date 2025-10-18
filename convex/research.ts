@@ -345,30 +345,39 @@ function generateMockProducts(
 /**
  * Get the latest research results for the current user's active session
  * Returns flattened product array from the most recent research
+ * SECURITY: Always requires sessionId and verifies user ownership
  */
 export const getLatestResearchResults = query({
   args: {
-    sessionId: v.optional(v.string()),
+    sessionId: v.string(), // Required - prevents data leakage
   },
   handler: async (ctx, args) => {
-    // If sessionId provided, get results for that session
-    const sessionId = args.sessionId;
-    if (sessionId) {
-      const results = await ctx.db
-        .query("research_results")
-        .withIndex("by_session", (q) => q.eq("sessionId", sessionId))
-        .order("desc")
-        .first();
-
-      return results?.results || [];
+    // Verify user is authenticated
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
     }
 
-    // Otherwise, get the most recent research results across all sessions
-    const allResults = await ctx.db
-      .query("research_results")
-      .order("desc")
-      .take(1);
+    const userId = identity.subject;
 
-    return allResults[0]?.results || [];
+    // Verify the session belongs to this user
+    const session = await ctx.db
+      .query("voice_sessions")
+      .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
+      .first();
+
+    if (!session || session.userId !== userId) {
+      console.warn(`[Security] User ${userId} attempted to access session ${args.sessionId}`);
+      return [];
+    }
+
+    // Get results for the verified session
+    const results = await ctx.db
+      .query("research_results")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .order("desc")
+      .first();
+
+    return results?.results || [];
   },
 });

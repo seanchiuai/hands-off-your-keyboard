@@ -38,9 +38,10 @@ function SinglePageUI() {
   const initiateSession = useAction(api.voiceShopper.initiateSession);
 
   // Get research results from background research agent
+  // Skip query if no sessionId to prevent unauthorized access
   const researchResults = useQuery(
     api.research.getLatestResearchResults,
-    sessionId ? { sessionId } : {}
+    sessionId ? { sessionId } : "skip"
   );
 
   // Audio streaming hooks
@@ -103,8 +104,14 @@ function SinglePageUI() {
       initAudioContext();
 
       const result = await initiateSession({});
+
+      // Validate session result before proceeding
+      if (!result.sessionId || !result.userId) {
+        throw new Error("Failed to create valid session - missing sessionId or userId");
+      }
+
       setSessionId(result.sessionId);
-      setUserId(result.userId || user?.id || "anonymous");
+      setUserId(result.userId);
       setIsActive(true);
 
       toast.success("Listening... Tell me what you're looking for!");

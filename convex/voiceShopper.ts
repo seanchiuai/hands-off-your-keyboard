@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { action, mutation, query, internalMutation } from "./_generated/server";
+import { action, mutation, query, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
@@ -351,5 +351,18 @@ export const getAllSessions = query({
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
       .take(limit);
+  },
+});
+
+/**
+ * Internal query to get session by ID (used by HTTP endpoints)
+ */
+export const getSessionByIdInternal = internalQuery({
+  args: { sessionId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("voice_sessions")
+      .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
+      .first();
   },
 });

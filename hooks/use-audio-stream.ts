@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useEffect } from "react";
+import { toast } from "sonner";
 
 /**
  * Hook for handling audio input/output streaming
@@ -114,6 +115,10 @@ export function useAudioStream() {
         }
       } catch (error) {
         console.error("Error playing audio:", error);
+        toast.error("Failed to play audio response", {
+          description: "The audio format may not be supported by your browser.",
+          duration: 4000,
+        });
       }
     },
     [initAudioContext]
