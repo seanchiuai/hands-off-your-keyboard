@@ -236,14 +236,14 @@ function processGeminiResults(geminiResult: any): Array<{
           let rating: number | undefined;
           if (item.rating !== undefined) {
             rating = typeof item.rating === "number" ? item.rating : parseFloat(item.rating);
-            if (isNaN(rating)) rating = undefined;
+            if (rating !== undefined && isNaN(rating)) rating = undefined;
           }
 
           // Extract review count
           let reviewsCount: number | undefined;
           if (item.reviewCount !== undefined) {
             reviewsCount = typeof item.reviewCount === "number" ? item.reviewCount : parseInt(item.reviewCount);
-            if (isNaN(reviewsCount)) reviewsCount = undefined;
+            if (reviewsCount !== undefined && isNaN(reviewsCount)) reviewsCount = undefined;
           }
 
           return {
