@@ -29,7 +29,7 @@ export function ResearchTasksPanel() {
   ).slice(0, 3) || [];
 
   const handleViewResults = (queryId: string) => {
-    router.push(`/research?queryId=${queryId}`);
+    router.push(`/?queryId=${queryId}`);
   };
 
   // Calculate time since action
