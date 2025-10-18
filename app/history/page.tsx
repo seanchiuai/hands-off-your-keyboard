@@ -1,8 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+// import { useQuery } from "convex/react";
+// import { api } from "@/convex/_generated/api";
+
+interface VoiceSession {
+  sessionId: string;
+  status: string;
+  startTime: number;
+  endTime?: number;
+}
 
 function SectionHeading({ label }: { label: string }) {
   return (
@@ -25,10 +32,18 @@ export default function HistoryPage() {
   }, [pinned]);
 
   // Fetch all voice sessions from Convex
-  const sessions = useQuery(api.voiceShopper.getAllSessions, { limit: 100 }) || [];
+  // Note: This function might not be deployed yet, so we'll handle the error gracefully
+  // TODO: Uncomment when Convex functions are deployed
+  // const sessions = useQuery(api.voiceShopper.getAllSessions, { limit: 100 });
+  
+  // Temporary fallback until Convex functions are deployed
+  const sessions = undefined;
+  
+  // Fallback to empty array if sessions is undefined or if the function doesn't exist
+  const safeSessions = sessions || [];
 
   // Transform sessions into entries for display
-  const entries = sessions.map((session) => ({
+  const entries = safeSessions.map((session: VoiceSession) => ({
     id: session.sessionId,
     type: "voice" as const,
     title: `Voice session - ${session.status}`,

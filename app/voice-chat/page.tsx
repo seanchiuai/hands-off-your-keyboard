@@ -1,15 +1,55 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mic, MicOff, Volume2 } from "lucide-react";
 
 // Extend Window type for Web Speech API
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+interface SpeechRecognitionEvent {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionResultList {
+  length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string;
+  message: string;
+}
+
 declare global {
   interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
   }
 }
 
@@ -21,7 +61,7 @@ export default function VoiceChatPage() {
   const [response, setResponse] = useState("");
 
   const wsRef = useRef<WebSocket | null>(null);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
   // Initialize Web Speech Recognition
@@ -40,7 +80,7 @@ export default function VoiceChatPage() {
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       let interimTranscript = '';
       let finalTranscript = '';
 
@@ -63,7 +103,7 @@ export default function VoiceChatPage() {
       }
     };
 
-    recognition.onerror = (event: any) => {
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       console.error("Speech recognition error:", event.error);
       setStatus(`Error: ${event.error}`);
     };
@@ -208,7 +248,7 @@ export default function VoiceChatPage() {
   };
 
   // Disconnect from server
-  const disconnect = () => {
+  const disconnect = useCallback(() => {
     stopListening();
 
     if (wsRef.current) {
@@ -225,7 +265,7 @@ export default function VoiceChatPage() {
     setStatus("Disconnected");
     setTranscript("");
     setResponse("");
-  };
+  }, [stopListening]);
 
   // Toggle listening
   const toggleListening = () => {
@@ -241,7 +281,7 @@ export default function VoiceChatPage() {
     return () => {
       disconnect();
     };
-  }, []);
+  }, [disconnect]);
 
   return (
     <div className="min-h-screen p-8 flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -336,8 +376,8 @@ export default function VoiceChatPage() {
               <span>How to use:</span>
             </h3>
             <ul className="text-sm text-gray-300 space-y-1 ml-7 list-disc">
-              <li>Click "Connect to Assistant" to start</li>
-              <li>Click "Start Talking" and speak clearly</li>
+              <li>Click &quot;Connect to Assistant&quot; to start</li>
+              <li>Click &quot;Start Talking&quot; and speak clearly</li>
               <li>The AI will respond with voice and text</li>
               <li>Ask about products, save items, or get recommendations</li>
             </ul>
